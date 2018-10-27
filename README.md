@@ -23,7 +23,8 @@
 
 ## 5. Create a GitHub App
 - https://github.com/Azure/brigade-github-app#1-create-a-github-app
-- leave Webhook secret (SharedSecret) empty for now
+- leave the Webhook secret (SharedSecret) empty for now
+- _Homepage URL_ is [your-domain] for the Anya-Frontend (anya.myBusiness.com)
 - The webhook url consists of your domain or an IP adress - which will be created later
 - generate a private key, save it carefully and securely
 - install the Github App for your repository (at GitHub)
