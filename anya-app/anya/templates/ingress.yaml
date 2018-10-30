@@ -1,0 +1,63 @@
+{{- $fullName := include "anya.fullname" . -}}
+{{- $staticIP := .Values.ingress.staticIP -}}
+{{- $domainName := .Values.ingress.host -}}
+{{- $backendServiceName := .Values.ingress.ghAppServiceName -}}
+{{- $backendServicePort := .Values.ingress.ghAppServicePort -}}
+{{- $backendServicePath := .Values.ingress.ghAppServicePath -}}
+{{- $dashboardServiceName := .Values.ingress.dashboardServiceName -}}
+{{- $dashboardServicePort := .Values.ingress.dashboardServicePort -}}
+{{- $dashboardServicePath := .Values.ingress.dashboardServicePath -}}
+{{- $apiServiceName := .Values.ingress.apiServiceName -}}
+{{- $apiServicePort := .Values.ingress.apiServicePort -}}
+{{- $apiServicePath := .Values.ingress.apiServicePath -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    app.kubernetes.io/name: {{ include "anya.name" . }}
+    helm.sh/chart: {{ include "anya.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/ingress.allow-http: "false"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    {{- if .Values.oauthProxy.enabled -}}
+    nginx.ingress.kubernetes.io/auth-url: {{ .Values.oauthProxy.authUrl }}
+    nginx.ingress.kubernetes.io/auth-signin: {{ .Values.oauthProxy.authSignin }}
+    {{- end -}}
+    #nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    #nginx.ingress.kubernetes.io/secure-backends: "true"
+{{- with .Values.ingress.annotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+{{- if .Values.ingress.tls }}
+  tls:
+  {{- range .Values.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}
+  {{- end }}
+{{- end }}
+  rules:
+    - host: {{ $domainName | quote }}
+      http:
+        paths:
+          - path: {{ $backendServicePath }}
+            backend:
+              serviceName: {{ $backendServiceName }}
+              servicePort: {{ $backendServicePort }}
+          - path: {{ $dashboardServicePath }}
+            backend:
+              serviceName: {{ $dashboardServiceName }}
+              servicePort: {{ $dashboardServicePort }}
+          - path: {{ $apiServicePath }}
+            backend:
+              serviceName: {{ $apiServiceName }}
+              servicePort: {{ $apiServicePort }}

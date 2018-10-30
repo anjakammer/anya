@@ -1,0 +1,113 @@
+# version: v0.0.1
+[metadata]
+  org = "anya.run"
+  maintainer = "Anja Kammer"
+  description = "Desired State File for a anya setup"
+
+[settings]
+  kubeContext = "$KUBE_CONTEXT" # fill in you own context
+#  serviceAccount = "tiller" # k8s serviceaccount. If it does not exist, it will be created.
+#  storageBackend = "secret" # default is configMap
+#  slackWebhook = "$slack" # or "your slack webhook url"
+#  reverseDelete = false # reverse the priorities on delete
+
+
+# define your environments and their k8s namespaces
+# syntax:
+# [namespaces.<your namespace>] -- whitespace before this entry does not matter, use whatever indentation style you like
+# protected = <true or false> -- default to false
+[namespaces]
+  [namespaces.anya]
+  [namespaces.kube-system]
+#    protected = false
+    installTiller = true
+
+[helmRepos]
+  stable = "https://kubernetes-charts.storage.googleapis.com"
+  azure = "https://azure.github.io/brigade"
+  anya = "https://storage.googleapis.com/anya-deployment/charts"
+
+[apps]
+
+  # [apps.cert-manager]
+  #   namespace = "kube-system" # maps to the namespace as defined in namespaces above
+  #   enabled = true # change to false if you want to delete this app release [default = false]
+  #   chart = "stable/cert-manager" # changing the chart name means delete and recreate this release
+  #   version = "0.5.0" # chart version
+  #   ### Optional values below
+  #   valuesFile = "cert-manager-values.yaml" # leaving it empty uses the default chart values
+  #   purge = true # will only be considered when there is a delete operation
+  #   protected = false
+  #   priority = -600
+  #   wait = true
+
+  [apps.brigade]
+    namespace = "anya" # maps to the namespace as defined in namespaces above
+    #namespace = "default" # maps to the namespace as defined in namespaces above
+    enabled = true # change to false if you want to delete this app release [default = false]
+    chart = "azure/brigade" # changing the chart name means delete and recreate this release
+    version = "0.18.0" # chart version
+    ### Optional values below
+    valuesFile = "brigade-values.yaml" # leaving it empty uses the default chart values
+    purge = true # will only be considered when there is a delete operation
+    protected = false
+    priority = -500
+
+  [apps.brigade-github-app]
+    namespace = "anya" # maps to the namespace as defined in namespaces above
+    #namespace = "default" # maps to the namespace as defined in namespaces above
+    enabled = true # change to false if you want to delete this app release [default = false]
+    chart = "anya/brigade-github-app" # changing the chart name means delete and recreate this release
+    version = "0.1.1" # chart version
+    ### Optional values below
+    valuesFile = "brigade-github-app-values.yaml" # leaving it empty uses the default chart values
+    purge = true # will only be considered when there is a delete operation
+    protected = false
+    priority = -400
+
+  [apps.kashti]
+    namespace = "anya" # maps to the namespace as defined in namespaces above
+    #namespace = "default" # maps to the namespace as defined in namespaces above
+    enabled = true # change to false if you want to delete this app release [default = false]
+    chart = "anya/kashti" # changing the chart name means delete and recreate this release
+    version = "0.1.0" # chart version
+    ### Optional values below
+    valuesFile = "kashti-values.yaml" # leaving it empty uses the default chart values
+    purge = true # will only be considered when there is a delete operation
+    protected = false
+    priority = -300
+
+  [apps.nginx]
+    namespace = "kube-system" # maps to the namespace as defined in namespaces above
+    #namespace = "default" # maps to the namespace as defined in namespaces above
+    enabled = true # change to false if you want to delete this app release [default = false]
+    chart = "stable/nginx-ingress" # changing the chart name means delete and recreate this release
+    version = "0.29.1" # chart version
+    ### Optional values below
+    valuesFile = "nginx-values.yaml" # leaving it empty uses the default chart values
+    purge = true # will only be considered when there is a delete operation
+    protected = false
+    priority = -200
+
+  [apps.anya-app]
+    namespace = "anya" # maps to the namespace as defined in namespaces above
+    #namespace = "default" # maps to the namespace as defined in namespaces above
+    enabled = true # change to false if you want to delete this app release [default = false]
+    chart = "anya/anya" # changing the chart name means delete and recreate this release
+    version = "0.1.0" # chart version
+    ### Optional values below
+    valuesFile = "anya-values.yaml" # leaving it empty uses the default chart values
+    purge = true # will only be considered when there is a delete operation
+    protected = false
+    priority = -100
+
+  # [apps.oauth2-proxy]
+  #   namespace = "anya" # maps to the namespace as defined in namespaces above
+  #   enabled = true # change to false if you want to delete this app release [default = false]
+  #   chart = "stable/oauth2-proxy" # changing the chart name means delete and recreate this release
+  #   version = "0.6.0" # chart version
+  #   ### Optional values below
+  #   valuesFile = "oauth2-proxy-values.yaml" # leaving it empty uses the default chart values
+  #   purge = true # will only be considered when there is a delete operation
+  #   protected = false
+  #   priority = -50

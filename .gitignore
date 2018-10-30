@@ -1,0 +1,8 @@
+/*
+!.gitignore
+!README.md
+!Makefile
+
+# anya components
+!anya-app
+!helmsman-config
