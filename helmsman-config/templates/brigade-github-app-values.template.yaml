@@ -1,0 +1,25 @@
+# Set this to true to enable Kubernetes RBAC support (recommended)
+rbac:
+  enabled: true
+
+# Image configuration
+registry: technosophos
+name: brigade-github-app
+tag: latest
+pullPolicy: "Always"
+
+service:
+  name: brigade-github-app
+  type: ClusterIP
+  externalPort: 80
+  internalPort: 7746
+
+ingress:
+  enabled: false
+
+github:
+  # The x509 PEM-formatted keyfile GitHub issued for you App.
+  key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    XXX
+    -----END RSA PRIVATE KEY-----

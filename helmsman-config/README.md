@@ -2,7 +2,7 @@
 ## Content of this directory
 This directory contains all value files, which are getting passed for the anya installation. The setup.toml file is referencing these files with the `valuesFile` option, to configure the helm deployments with custom values.
 
-Please remove the `template` keyword from the file name for matching the required name.
+Please copy the files from the `template` directory here and remove the `template` keyword from the file name for matching the required name.
 
 ## Secure your configurations
 Naturally, your custom configurations are vulnerabilities and need to be stored securely.

@@ -1,0 +1,35 @@
+# Default values for anya.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+ingress:
+  host: anya.example.com
+
+  # annotations:
+  #   nginx.ingress.kubernetes.io/ssl-redirect: "false"	# remove this, if TLS is active
+  #   kubernetes.io/ingress.allow-http: "true" # remove this, if TLS is active
+
+  tls:
+    # Secrets must be manually created in the namespace.
+    - secretName: anya-tls
+      hosts:
+      - anya.example.com
+
+# oauthProxy:
+#   enabled: true
+#   authUrl: "https://test.anya.run/oauth2/auth"
+#   authSignin: "https://test.anya.run/oauth2/start"
+#   authUrl: "https://$host/oauth2/auth"
+#   authSignin: "https://$host/oauth2/start?rd=$request_uri"
+#   authSignin: "https://auth.example.com/oauth2/start?rd=https://$host$request_uri$is_args$args"
+
+certificate: {}
+  # name:
+  # crt: |
+  #   -----BEGIN CERTIFICATE-----
+  #   <base64>
+  #   -----END CERTIFICATE-----
+  # key: |
+  #   -----BEGIN RSA PRIVATE KEY-----
+  #   <base64>
+  #   -----END RSA PRIVATE KEY-----

@@ -1,0 +1,4 @@
+service:
+  type: NodePort
+ingress:
+  enabled: false
