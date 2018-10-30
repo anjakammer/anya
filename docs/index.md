@@ -1,5 +1,3 @@
-## anya
-
 Deploy Your Kubernetes Apps The GitOps Way
 
 ### Topics
