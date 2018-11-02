@@ -18,3 +18,11 @@ For using this service, you need to set Cloudflare's nameservers for your domain
 ## Option 2
 ### cert-manager
 You can install the cert-manager as a Kubernetes App, which will automatically watches the state of your certificate and will issue or renew a Let's Encrypt Certificate.
+
+## Option 3
+### OpenSSL
+You can generate a self signed SSL Certificate with [OpenSSL](https://github.com/kubernetes/ingress-nginx/blob/master/docs/examples/PREREQUISITES.md#tls-certificates). you can upload it like this:
+* via kubectl
+ * `kubectl create secret tls anya-tls --key path/to/private-key.key --cert path/to/origin-certificate.pem -n anya`
+* via anya-values.yaml
+  * section `certificate`

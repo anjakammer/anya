@@ -1,12 +1,10 @@
 # Set this to true to enable Kubernetes RBAC support (recommended)
 rbac:
   enabled: true
-api:
-  enabled: true
+
+gw:
+  enabled: false  # we use the Brigade-GitHub-App instead
+
+service:
   name: brigade-api
-  # tag:
-  service:
-    name: brigade-api
-    type: NodePort
-    externalPort: 7745
-    internalPort: 7745
+  type: ClusterIP

@@ -2,20 +2,24 @@
 rbac:
   enabled: true
 
-# Image configuration
-registry: technosophos
-name: brigade-github-app
-tag: latest
-pullPolicy: "Always"
-
 service:
   name: brigade-github-app
   type: ClusterIP
-  externalPort: 80
-  internalPort: 7746
 
 ingress:
   enabled: false
+  # # Used to create an Ingress record.
+  # hosts:
+  #   - test.anya.run
+  # annotations:
+  #   kubernetes.io/ingress.class: nginx
+  #   kubernetes.io/tls-acme: "true"
+  #   kubernetes.io/ingress.global-static-ip-name: anya-test-ip
+  # tls:
+  #   # Secrets must be manually created in the namespace.
+  #   - secretName: anya-tls
+  #     hosts:
+  #     - test.anya.run
 
 github:
   # The x509 PEM-formatted keyfile GitHub issued for you App.

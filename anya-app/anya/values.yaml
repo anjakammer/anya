@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 80
 
 ingress:

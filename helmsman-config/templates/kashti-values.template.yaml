@@ -1,4 +1,4 @@
 service:
-  type: NodePort
+  type: ClusterIP
 ingress:
   enabled: false
