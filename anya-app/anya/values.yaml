@@ -9,8 +9,8 @@ service:
 ingress:
   host: anya.example.com
 
-  #annotations:
-    #nginx.ingress.kubernetes.io/ssl-redirect: "false"	# remove this, if TLS is active
+  # annotations:
+  #   kubernetes.io/ingress.class: nginx
 
   ghAppServiceName: brigade-github-app-brigade-github-app
   ghAppServicePath: /events/github
