@@ -4,7 +4,7 @@ Deploy Your Kubernetes Apps The GitOps Way
 
 ### Installation
 * [Installation Guide](installation-guide.md)
-* All Things `IP, Domain and DNS`
+* [All Things `IP, Domain and DNS`](ip_domain_dns.md)
 
 
 ### Security & Access Control
