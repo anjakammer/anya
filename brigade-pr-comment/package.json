@@ -1,0 +1,14 @@
+{
+  "name": "brigade-pr-comments",
+  "version": "0.0.1",
+  "author": "Anja Kammer",
+  "license": "UNLICENSE",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "request": "2.88.0",
+    "request-promise": "4.2.2"
+  }
+}
