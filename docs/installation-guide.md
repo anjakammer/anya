@@ -6,11 +6,15 @@
 - enable RBAC (disable legacy Authorization)
 - min 2 Instances 1 CPU, 2GB RAM
 
-## 2. Set yourself Admin permissions 
+## 2. Set yourself Admin permissions
 `kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default`
+`kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=[your-user-email]]`
+
+You are getting your user email address at the providers IAM user configurations page.
+This is not trivial, the command is case sensitive.
 
 ## 3. Set your cluster context
-- set your current cluster context to the cluster you just created
+Set your current cluster context to the cluster you just created. Save this context as a Environment Variable under `$KUBE_CONTEXT`, so that the `helmsman-config/setup.toml` file can grab your cluster context from it.
 
 ## 4. Install the package Manager
 - Helm
@@ -39,7 +43,7 @@
 - `brigade-values.yaml`
   - rbac.enabled: true
 - `setup.toml`
-  - settings.kubeContext: [your cluster context] 
+  - settings.kubeContext: [your cluster context]
     - `kubectl config current-context`
 
 ## 7. Apply the configurations to your fresh cluster
