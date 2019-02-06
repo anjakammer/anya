@@ -1,0 +1,2 @@
+- set permission to current user for creating service accounts
+- create serviceAccount, Clusterrole and Clusterrolebinding

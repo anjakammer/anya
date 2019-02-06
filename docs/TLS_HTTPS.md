@@ -6,7 +6,7 @@ The setup of anya requires a SSL/TLS Certificate to allow incoming traffic.
 ### Cloudflare - SSL Full (Strict)
 One can register for a _free_ SSL Cetificate. Cloudflare will restrict and route
 all incoming requests to your server. Therefore you need to generate a
-_Origin Certificate_. This certificate needs to be uploaded
+_Origin Certificate_. This certificate needs to be uploaded for all namespaces in use with the corresponding hostname (ex. 'anya', 'preview', 'production')
 * via kubectl
  * `kubectl create secret tls anya-tls --key path/to/private-key.key --cert path/to/origin-certificate.pem -n anya`
 * via anya-values.yaml

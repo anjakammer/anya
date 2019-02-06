@@ -16,7 +16,7 @@ ingress:
   ghAppServicePath: /events/github
   ghAppServicePort: 80
 
-  dashboardServiceName: kashti-kashti
+  dashboardServiceName: brigade-kashti
   dashboardServicePath: /
   dashboardServicePort: 80
 

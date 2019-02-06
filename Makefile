@@ -9,7 +9,7 @@ package:
 	gsutil cp -r dist/* gs://anya-deployment/charts/
 
 helmsman-plan :
-	helmsman -f helmsman-config/setup.toml --dry-run --verbose
+	helmsman -f helmsman-config/setup.toml --verbose
 
 helmsman-apply :
 	helmsman -f helmsman-config/setup.toml --apply
