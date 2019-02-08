@@ -5,21 +5,13 @@
   description = "Desired State File for an anya setup"
 
 [settings]
-  kubeContext = "$KUBE_CONTEXT" # fill in your own context
-#  serviceAccount = "tiller" # k8s serviceaccount. If it does not exist, it will be created.
-#  storageBackend = "secret" # default is configMap
-#  slackWebhook = "$slack" # or "your slack webhook url"
-#  reverseDelete = false # reverse the priorities on delete
+  kubeContext = "$KUBE_CONTEXT"
 
-
-# define your environments and their k8s namespaces
-# syntax:
-# [namespaces.<your namespace>] -- whitespace before this entry does not matter, use whatever indentation style you like
-# protected = <true or false> -- default to false
 [namespaces]
   [namespaces.anya]
+  [namespaces.preview]
+  [namespaces.production]
   [namespaces.kube-system]
-#    protected = false
     installTiller = true
 
 [helmRepos]
@@ -31,7 +23,6 @@
 
   [apps.brigade]
     namespace = "anya" # maps to the namespace as defined in namespaces above
-    #namespace = "default" # maps to the namespace as defined in namespaces above
     enabled = true # change to false if you want to delete this app release [default = false]
     chart = "brigade/brigade" # changing the chart name means delete and recreate this release
     version = "0.20.0" # chart version
@@ -39,23 +30,21 @@
     valuesFile = "brigade-values.yaml" # leaving it empty uses the default chart values
     purge = true # will only be considered when there is a delete operation
     protected = false
-    priority = -500
+    priority = -400
 
   [apps.brigade-github-app]
     namespace = "anya" # maps to the namespace as defined in namespaces above
-    #namespace = "default" # maps to the namespace as defined in namespaces above
     enabled = true # change to false if you want to delete this app release [default = false]
-    chart = "anya/brigade-github-app" # changing the chart name means delete and recreate this release
-    version = "0.0.1" # chart version
+    chart = "brigade/brigade-github-app" # changing the chart name means delete and recreate this release
+    version = "0.1.1" # chart version
     ### Optional values below
     valuesFile = "brigade-github-app-values.yaml" # leaving it empty uses the default chart values
     purge = true # will only be considered when there is a delete operation
     protected = false
-    priority = -400
+    priority = -300
 
   [apps.nginx]
     namespace = "kube-system" # maps to the namespace as defined in namespaces above
-    #namespace = "default" # maps to the namespace as defined in namespaces above
     enabled = true # change to false if you want to delete this app release [default = false]
     chart = "stable/nginx-ingress" # changing the chart name means delete and recreate this release
     version = "0.29.1" # chart version
@@ -67,7 +56,6 @@
 
   [apps.anya-app]
     namespace = "anya" # maps to the namespace as defined in namespaces above
-    #namespace = "default" # maps to the namespace as defined in namespaces above
     enabled = true # change to false if you want to delete this app release [default = false]
     chart = "anya/anya" # changing the chart name means delete and recreate this release
     version = "0.1.0" # chart version
