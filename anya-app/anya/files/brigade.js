@@ -58,9 +58,9 @@ async function runCheckSuite (config) {
   const imageTag = (webhook.body.check_suite.head_sha).slice(0, 7)
   const imageName = `${secrets.DOCKER_REPO}/${appName}:${imageTag}`
 
-  // await runBuildStage(imageName)
-  // await runTestStage(imageName, config.testStageTasks)
-  // await runDeployStage(config, appName, imageName, imageTag)
+  await runBuildStage(imageName)
+  await runTestStage(imageName, config.testStageTasks)
+  await runDeployStage(config, appName, imageName, imageTag)
 }
 
 async function runBuildStage (imageName) {
