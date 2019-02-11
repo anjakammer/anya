@@ -6,8 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: tiller
     app.kubernetes.io/instance: anya-brigade-pipeline
-    # helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    helm.sh/chart: {{ include "anya.fullname" . }}
     app.kubernetes.io/name: anya-brigade-pipeline
 data:
-  # When the config map is mounted as a volume, these will be created as files.
-  brigade.js: {{ .Files.Get "files/brigade.js" | quote}}
+  brigade.js: |-
+{{ .Files.Get "files/brigade.js" | quote | nindent 4 }}

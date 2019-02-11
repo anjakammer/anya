@@ -17,32 +17,42 @@ ingress:
   ghAppServicePort: 80
 
   tls:
-    # Secrets must be manually created in the namespace.
+      # TLS Certificate Secrets must be already created
+      # for the namespaces: anya, production, preview.
     - secretName: anya-tls
       hosts:
       - anya.example.com
 
-  # projects: []
-  #   - project: "deis/empty-testbed" # Name of the project, in the form "user/project"
-  #     # Domain/Org/Project
-  #     repository: "github.com/deis/empty-testbed"
-  #     cloneURL: "https://github.com/deis/empty-testbed.git"
-  #     # Used by GitHub and other services to compute hook HMACs.
-  #     sharedSecret: "IBrakeForSeaBeasts"
-  #     github:
-  #       token: "github oauth token"
-  #     initGitSubmodules: "false"
-  #     secrets: # format?
-  #       # Example:
-  #       # username: hello
-  #     sshKey: ""
-  #     # sshKey: |-
-  #     #  -----BEGIN RSA PRIVATE KEY-----
-  #     #  IIEpAIBAAKCAg1wyZD164xNLrANjRrcsbieLwHJ6fKD3LC19E...
-  #     #  ...
-  #     #  ...
-  #     #  -----END RSA PRIVATE KEY-----
-  #     imagePullSecret: "" # format?
+projects: []
+  # - project: "GitHub-Account/my-app" # Name of the project, in the form "user/project"
+  #   repository: "github.com/GitHub-Account/my-app" # Domain/Org/Project
+  #   cloneURL: "https://github.com/GitHub-Account/my-app.git"
+  #   sharedSecret: "superSecret" # Create this for the GitHub App
+  #   github:
+  #     token: "1234superSecret5678" # GitHub App > OAuth credentials > Client secret
+  #   initGitSubmodules: "false"  # submodules should be checked out
+  #   secrets:
+  #     GH_APP_NAME: "my-anya-ci" # name of the GitHub App for anya
+  #     DOCKER_REGISTRY: "docker.io" # docker.io
+  #     DOCKER_REPO: my-organisation # organisation
+  #     DOCKER_USER: my-username
+  #     DOCKER_PASS: "superSecret"
+  #     SLACK_CHANNEL: "CI/CD"
+  #     SLACK_WEBHOOK: "https://hooks.slack.com/services/ABC/XYZ/ndfjhkfdjk"
+  #     PREV_HOST: "anya.example.com"  # anya.example.com for preview deployments
+  #     PREV_TLS: "anya-tls" # name of the TLS certificate for PREV_HOST
+  #     PROD_HOST: example.com # root domain of the application in production
+  #     PROD_PATH: "/"  # endpoint/path of your application in production
+  #     PROD_TLS: "prod-tls"  # name of the TLS certificate for PROD_HOST
+  #     PROD_BRANCH: master # branch name for production deployments
+  #   sshKey: ""  # to pull from private repositories
+  #   # sshKey: |-
+  #   #  -----BEGIN RSA PRIVATE KEY-----
+  #   #  IIEpAIBAAKCAg1wyZD164xNLrANjRrcsbieLwHJ6fKD3LC19E...
+  #   #  ...
+  #   #  ...
+  #   #  -----END RSA PRIVATE KEY-----
+  #   imagePullSecret: "" # to pull from private image registries
 
 certificate: {}
   # name:

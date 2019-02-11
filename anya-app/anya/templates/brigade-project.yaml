@@ -1,58 +1,59 @@
+{{- $fullName := include "anya.fullname" . -}}
+{{- range .Values.projects }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: brigade-{{ sha256sum .Values.project| trunc 54 }}
+  name: brigade-{{ sha256sum .project| trunc 54 }}
   namespace: anya
   labels:
     app: brigade
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: {{ .Release.Name | quote }}
-    heritage: {{ .Release.Service }}
+    chart: {{ $fullName }}
+    release: {{ $fullName }}
+    heritage: {{ $fullName }}
     component: project
   annotations:
-    projectName: {{ .Values.project | quote }}
+    projectName: {{ .project | quote }}
 type: "brigade.sh/project"
 stringData:
-  repository: {{ .Values.repository | quote }}
-  sharedSecret: {{ .Values.sharedSecret | quote }}
-  cloneURL: {{ .Values.cloneURL | quote }}
-  initGitSubmodules: {{ default "false" .Values.initGitSubmodules | quote }}
+  repository: {{ .repository | quote }}
+  sharedSecret: {{ .sharedSecret | quote }}
+  cloneURL: {{ .cloneURL | quote }}
+  initGitSubmodules: {{ default "false" .initGitSubmodules | quote }}
   defaultScriptName: "anya-brigade-pipeline"
-  {{ if .Values.defaultScript }}
-  defaultScript: |
-{{.Values.defaultScript | indent 4}}
-  {{- end }}
+  defaultScript: ""
   vcsSidecar: "deis/git-sidecar:latest"
   vcsSidecarResources.limits.cpu: ""
   vcsSidecarResources.limits.memory: ""
   vcsSidecarResources.requests.cpu: ""
   vcsSidecarResources.requests.memory: ""
-  {{ if .Values.buildStorageSize }}
-  buildStorageSize: {{ .Values.buildStorageSize | quote }}
+  {{ if .buildStorageSize }}
+  buildStorageSize: {{ .buildStorageSize | quote }}
   {{- end }}
-  {{ if .Values.imagePullSecrets }}
-  imagePullSecrets: {{ .Values.imagePullSecrets | quote }}
+  {{ if .imagePullSecrets }}
+  imagePullSecrets: {{ .imagePullSecrets | quote }}
   {{- end }}
-  {{ if .Values.secrets }}
-  secrets: '{{ .Values.secrets | toJson }}'
+  {{ if .secrets }}
+  secrets: '{{ .secrets | toJson }}'
   {{- end }}
-  {{ range $k, $v := .Values.github}}
+  {{ range $k, $v := .github}}
   github.{{ $k }}: {{ $v | quote }}
   {{- end }}
-  {{ range $k, $v := .Values.kubernetes }}
+  {{ range $k, $v := .kubernetes }}
   kubernetes.{{ $k }}: {{ $v | quote }}
   {{- end }}
-  {{ if .Values.sshKey }}
-  sshKey: {{.Values.sshKey | replace "\n" "$" }}
+  {{ if .sshKey }}
+  sshKey: {{.sshKey | replace "\n" "$" }}
   {{- end }}
   allowPrivilegedJobs: "true"
   allowHostMounts: "false"
-  {{ range $k, $v := .Values.worker -}}
+  {{ range $k, $v := .worker -}}
   worker.{{ $k }}: {{ $v | quote }}
   {{ end -}}
-  {{if .Values.workerCommand -}}
-  workerCommand: {{.Values.workerCommand | quote }}
+  {{if .workerCommand -}}
+  workerCommand: {{.workerCommand | quote }}
   {{- end }}
-  {{if .Values.genericGatewaySecret -}}
-  genericGatewaySecret: {{ .Values.genericGatewaySecret | quote }}
+  {{if .genericGatewaySecret -}}
+  genericGatewaySecret: {{ .genericGatewaySecret | quote }}
   {{- end }}
+---
+ {{- end }}
