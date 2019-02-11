@@ -5,5 +5,5 @@
 !Makefile
 
 # anya components
-!anya-app
+!charts
 !helmsman-config

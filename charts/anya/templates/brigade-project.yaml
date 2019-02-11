@@ -20,7 +20,6 @@ stringData:
   cloneURL: {{ .cloneURL | quote }}
   initGitSubmodules: {{ default "false" .initGitSubmodules | quote }}
   defaultScriptName: "anya-brigade-pipeline"
-  defaultScript: ""
   vcsSidecar: "deis/git-sidecar:latest"
   vcsSidecarResources.limits.cpu: ""
   vcsSidecarResources.limits.memory: ""

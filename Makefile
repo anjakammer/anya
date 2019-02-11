@@ -1,10 +1,10 @@
 .PHONY : package lint helmsman-plan helmsman-apply purge-worker purge-preview
 
 lint:
-	helm lint anya-app/anya/
+	helm lint charts/anya/
 
 package:
-	helm package --destination dist anya-app/anya/
+	helm package --destination dist charts/anya/
 	helm repo index dist/
 	gsutil cp -r dist/* gs://anya-deployment/charts/
 

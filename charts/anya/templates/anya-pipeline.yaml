@@ -10,4 +10,4 @@ metadata:
     app.kubernetes.io/name: anya-brigade-pipeline
 data:
   brigade.js: |-
-{{ .Files.Get "files/brigade.js" | quote | nindent 4 }}
+{{ .Files.Get "files/brigade.js" | indent 4 }}
