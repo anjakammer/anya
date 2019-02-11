@@ -1,4 +1,4 @@
-.PHONY : package lint helmsman-plan helmsman-apply
+.PHONY : package lint helmsman-plan helmsman-apply purge-worker purge-preview
 
 lint:
 	helm lint anya-app/anya/
@@ -13,3 +13,9 @@ helmsman-plan :
 
 helmsman-apply :
 	helmsman -f helmsman-config/setup.toml --apply
+
+purge-worker :
+	kubectl delete pod -n anya -l 'component in (job, build)'
+
+purge-preview :
+	kubectl delete deployment,services,ingress -n preview --all

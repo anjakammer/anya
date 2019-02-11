@@ -23,10 +23,6 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     kubernetes.io/ingress.allow-http: "false"
-    {{- if .Values.oauthProxy.enabled -}}
-    nginx.ingress.kubernetes.io/auth-url: {{ .Values.oauthProxy.authUrl }}
-    nginx.ingress.kubernetes.io/auth-signin: {{ .Values.oauthProxy.authSignin }}
-    {{- end -}}
 {{- with .Values.ingress.annotations }}
 {{ toYaml . | indent 4 }}
 {{- end }}
@@ -49,11 +45,3 @@ spec:
             backend:
               serviceName: {{ $backendServiceName }}
               servicePort: {{ $backendServicePort }}
-          - path: {{ $dashboardServicePath }}
-            backend:
-              serviceName: {{ $dashboardServiceName }}
-              servicePort: {{ $dashboardServicePort }}
-          - path: {{ $apiServicePath }}
-            backend:
-              serviceName: {{ $apiServiceName }}
-              servicePort: {{ $apiServicePort }}

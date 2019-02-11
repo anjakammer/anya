@@ -1,2 +1,3 @@
 - set permission to current user for creating service accounts
 - create serviceAccount, Clusterrole and Clusterrolebinding
+- helm upgrade --install node-http-123-preview anya/deployment-template --namespace preview --set-string image.repository='docker.io/anjakammer/node-http',image.tag='b5a4177287b921e5ebe8a074abd86012c361dd0c',ingress.path='node-http/b5a4177',ingress.host='test.anya.run',ingress.tlsSecretName='anya-tls',service.targetPort=8080

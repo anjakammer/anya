@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: brigade-{{ sha256sum .Values.project| trunc 54 }}
+  namespace: anya
+  labels:
+    app: brigade
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service }}
+    component: project
+  annotations:
+    projectName: {{ .Values.project | quote }}
+type: "brigade.sh/project"
+stringData:
+  repository: {{ .Values.repository | quote }}
+  sharedSecret: {{ .Values.sharedSecret | quote }}
+  cloneURL: {{ .Values.cloneURL | quote }}
+  initGitSubmodules: {{ default "false" .Values.initGitSubmodules | quote }}
+  defaultScriptName: "anya-brigade-pipeline"
+  {{ if .Values.defaultScript }}
+  defaultScript: |
+{{.Values.defaultScript | indent 4}}
+  {{- end }}
+  vcsSidecar: "deis/git-sidecar:latest"
+  vcsSidecarResources.limits.cpu: ""
+  vcsSidecarResources.limits.memory: ""
+  vcsSidecarResources.requests.cpu: ""
+  vcsSidecarResources.requests.memory: ""
+  {{ if .Values.buildStorageSize }}
+  buildStorageSize: {{ .Values.buildStorageSize | quote }}
+  {{- end }}
+  {{ if .Values.imagePullSecrets }}
+  imagePullSecrets: {{ .Values.imagePullSecrets | quote }}
+  {{- end }}
+  {{ if .Values.secrets }}
+  secrets: '{{ .Values.secrets | toJson }}'
+  {{- end }}
+  {{ range $k, $v := .Values.github}}
+  github.{{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{ range $k, $v := .Values.kubernetes }}
+  kubernetes.{{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{ if .Values.sshKey }}
+  sshKey: {{.Values.sshKey | replace "\n" "$" }}
+  {{- end }}
+  allowPrivilegedJobs: "true"
+  allowHostMounts: "false"
+  {{ range $k, $v := .Values.worker -}}
+  worker.{{ $k }}: {{ $v | quote }}
+  {{ end -}}
+  {{if .Values.workerCommand -}}
+  workerCommand: {{.Values.workerCommand | quote }}
+  {{- end }}
+  {{if .Values.genericGatewaySecret -}}
+  genericGatewaySecret: {{ .Values.genericGatewaySecret | quote }}
+  {{- end }}

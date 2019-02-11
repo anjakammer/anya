@@ -16,24 +16,33 @@ ingress:
   ghAppServicePath: /events/github
   ghAppServicePort: 80
 
-  dashboardServiceName: brigade-kashti
-  dashboardServicePath: /
-  dashboardServicePort: 80
-
-  apiServiceName: brigade-brigade-api
-  apiServicePath: /v1
-  apiServicePort: 7745
-
   tls:
     # Secrets must be manually created in the namespace.
     - secretName: anya-tls
       hosts:
       - anya.example.com
 
-oauthProxy:
-  enabled: false
-  authUrl: "https://anya.example.com/oauth2/auth"
-  authSignin: "https://anya.example.com/oauth2/start"
+  # projects: []
+  #   - project: "deis/empty-testbed" # Name of the project, in the form "user/project"
+  #     # Domain/Org/Project
+  #     repository: "github.com/deis/empty-testbed"
+  #     cloneURL: "https://github.com/deis/empty-testbed.git"
+  #     # Used by GitHub and other services to compute hook HMACs.
+  #     sharedSecret: "IBrakeForSeaBeasts"
+  #     github:
+  #       token: "github oauth token"
+  #     initGitSubmodules: "false"
+  #     secrets: # format?
+  #       # Example:
+  #       # username: hello
+  #     sshKey: ""
+  #     # sshKey: |-
+  #     #  -----BEGIN RSA PRIVATE KEY-----
+  #     #  IIEpAIBAAKCAg1wyZD164xNLrANjRrcsbieLwHJ6fKD3LC19E...
+  #     #  ...
+  #     #  ...
+  #     #  -----END RSA PRIVATE KEY-----
+  #     imagePullSecret: "" # format?
 
 certificate: {}
   # name:
