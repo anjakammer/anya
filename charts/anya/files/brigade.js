@@ -97,7 +97,7 @@ async function runDeployStage (config, appName, imageName, imageTag) {
   const url = `${host}${path}`
   return new Deploy(appName, imageName, imageTag, targetPort, host, path, url).run()
     .then((result) => {
-      const actions = prodDeploy ? [] : [ { label: 'delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
+      const actions = prodDeploy ? [] : [ { label: 'Delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
       new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success, actions }).run()
       if (!prodDeploy && config.previewUrlAsComment) {
         new CommentPR(`Preview Environment is set up: <a href="https://${url}" target="_blank">${url}</a>`).run()
