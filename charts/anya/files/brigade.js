@@ -17,18 +17,21 @@ let secrets = ''
 events.on('check_suite:requested', checkRequested)
 events.on('check_suite:rerequested', checkRequested)
 events.on('check_run:rerequested', checkRequested)
-// events.on('pull_request', prClosed) // TODO action not definable
+events.on('pull_request', prClosed)
 
-async function prClosed (e, p) { // TODO webhook does not have the token
+async function prClosed (e, p) {
   webhook = JSON.parse(e.payload)
-  if (webhook.body.action === 'closed') {
+  if (webhook.action === 'closed') {
     console.log('PullRequest closed')
     let config = await parseConfig()
     if (config.purgePreviewDeployments) {
-      console.log('Dummy function - whooo purging') // TODO
+      console.log('purging all previews for this PR')
       secrets = p.secrets
-      prNr = webhook.body.number
-      return new CommentPR(`Deleted all Previews for PullRequest: ${prNr}`).run()
+      prNr = webhook.number
+      const previewLabel = `${webhook.repository.name}-${webhook.number}`
+      new PurgePreviews(previewLabel).run()
+        .then((result) => { return console.log(result.toString()) })
+        .catch((err) => { console.log(err.toString()) })
     }
   }
 }
@@ -46,7 +49,7 @@ async function checkRequested (e, p) {
     let config = await parseConfig()
     return runCheckSuite(config)
       .then(() => { return console.log('Finished Check Suite') })
-      .catch((err) => { console.log(err) })
+      .catch((err) => { console.log(err.toString()) })
   } else if (webhook.body.action !== 'rerequested') {
     rerequestCheckSuite()
   }
@@ -137,7 +140,7 @@ function rerequestCheckSuite () {
     TOKEN: webhook.token
   }
   setTimeout(() => {
-    rerequest.run().catch(err => { console.log(err) })
+    rerequest.run().catch(err => { console.log(err.toString()) })
   }, 30000) // wait 30 Sec.
 }
 
@@ -146,7 +149,7 @@ function registerCheckSuite () {
     new RegisterCheck(buildStage),
     new RegisterCheck(testStage),
     new RegisterCheck(deployStage)
-  ]).catch(err => { console.log(err) })
+  ]).catch(err => { console.log(err.toString()) })
 }
 
 class RegisterCheck extends Job {
@@ -193,6 +196,7 @@ class Deploy extends Job {
     const tlsName = prodDeploy ? secrets.PROD_TLS : secrets.PREV_TLS
     const deploymentName = prodDeploy ? `${appName}` : `${appName}-${imageTag}-preview`
     const namespace = prodDeploy ? 'production' : 'preview'
+    const previewLabel = prodDeploy || prNr === 0 ? '' : `,previewLabel=${appName}-${prNr}`
     super(deployStage.toLowerCase(), 'lachlanevenson/k8s-helm')
     this.useSource = false
     this.privileged = true
@@ -200,7 +204,7 @@ class Deploy extends Job {
     this.tasks = [
       'helm init --client-only > /dev/null 2>&1',
       'helm repo add anya https://storage.googleapis.com/anya-deployment/charts > /dev/null 2>&1',
-      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName}`,
+      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName}${previewLabel}`,
       `echo "URL: <a href="https://${url}" target="_blank">${url}</a>"`
     ]
   }
@@ -252,6 +256,19 @@ class SendSignal extends Job {
     this.env.CHECK_CONCLUSION = conclusion
     this.env.CHECK_SUMMARY = `${stage} ${conclusion}`
     this.env.CHECK_TEXT = logs
+  }
+}
+
+class PurgePreviews extends Job {
+  constructor (previewLabel) {
+    super('purge-previews', 'dtzar/helm-kubectl')
+    this.useSource = false
+    this.privileged = true
+    this.serviceAccount = 'anya-deployer'
+    this.tasks = [
+      'helm init --client-only > /dev/null 2>&1',
+      `helm del $(kubectl get deployment -n preview -o=jsonpath='{range .items[*]}{.metadata.name}{" "}{end}' -l anya.run/pr-preview=${previewLabel}) --purge`
+    ]
   }
 }
 

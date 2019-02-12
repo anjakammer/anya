@@ -3,6 +3,9 @@ kind: Service
 metadata:
   name: {{ include "deploymentTemplate.fullname" . }}
   labels:
+    {{ if .Values.previewLabel }}
+    anya.run/pr-preview: {{ .Values.previewLabel | quote }}
+    {{- end }}
     app.kubernetes.io/name: {{ include "deploymentTemplate.name" . }}
     helm.sh/chart: {{ include "deploymentTemplate.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

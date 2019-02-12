@@ -1,10 +1,11 @@
-.PHONY : package lint helmsman-plan helmsman-apply purge-worker purge-preview
+.PHONY : package lint helmsman-plan helmsman-apply purge-worker purge-preview update-pipeline
 
 lint:
 	helm lint charts/anya/
 
 package:
 	helm package --destination dist charts/anya/
+	helm package --destination dist charts/deployment-template/
 	helm repo index dist/
 	gsutil cp -r dist/* gs://anya-deployment/charts/
 
@@ -19,3 +20,7 @@ purge-worker :
 
 purge-preview :
 	kubectl delete deployment,services,ingress -n preview --all
+
+update-pipeline :
+	kubectl delete cm anya-brigade-pipeline -n anya
+	kubectl create cm anya-brigade-pipeline --from-file=charts/anya/files/brigade.js -n anya
