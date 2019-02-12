@@ -1,6 +1,7 @@
 const { events, Job, Group } = require('brigadier')
 
 const checkRunImage = 'deis/brigade-github-check-run:latest'
+const kubectlHelmImage = 'dtzar/helm-kubectl'
 const buildStage = '1-Build'
 const testStage = '2-Test'
 const deployStage = '3-Deploy'
@@ -141,7 +142,7 @@ function rerequestCheckSuite () {
   }
   setTimeout(() => {
     rerequest.run().catch(err => { console.log(err.toString()) })
-  }, 30000) // wait 30 Sec.
+  }, 30000) // wait 30 Sec. for PR to open
 }
 
 function registerCheckSuite () {
@@ -197,7 +198,7 @@ class Deploy extends Job {
     const deploymentName = prodDeploy ? `${appName}` : `${appName}-${imageTag}-preview`
     const namespace = prodDeploy ? 'production' : 'preview'
     const previewLabel = prodDeploy || prNr === 0 ? '' : `,previewLabel=${appName}-${prNr}`
-    super(deployStage.toLowerCase(), 'lachlanevenson/k8s-helm')
+    super(deployStage.toLowerCase(), kubectlHelmImage)
     this.useSource = false
     this.privileged = true
     this.serviceAccount = 'anya-deployer'
@@ -261,7 +262,7 @@ class SendSignal extends Job {
 
 class PurgePreviews extends Job {
   constructor (previewLabel) {
-    super('purge-previews', 'dtzar/helm-kubectl')
+    super('purge-previews', kubectlHelmImage)
     this.useSource = false
     this.privileged = true
     this.serviceAccount = 'anya-deployer'
