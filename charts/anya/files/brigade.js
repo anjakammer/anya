@@ -8,6 +8,7 @@ const deployStage = '3-Deploy'
 const failure = 'failure'
 const cancelled = 'cancelled'
 const success = 'success'
+const neutral = 'neutral'
 
 let prodDeploy = false
 let prNr = 0
@@ -18,22 +19,30 @@ let secrets = ''
 events.on('check_suite:requested', checkRequested)
 events.on('check_suite:rerequested', checkRequested)
 events.on('check_run:rerequested', checkRequested)
+events.on('check_run:requested_action', checkRunAction)
 events.on('pull_request', prClosed)
 
-async function prClosed (e, p) {
-  webhook = JSON.parse(e.payload)
-  if (webhook.action === 'closed') {
-    console.log('PullRequest closed')
-    let config = await parseConfig()
-    if (config.purgePreviewDeployments) {
-      console.log('purging all previews for this PR')
-      secrets = p.secrets
-      prNr = webhook.number
-      const previewLabel = `${webhook.repository.name}-${webhook.number}`
-      new PurgePreviews(previewLabel).run()
-        .then((result) => { return console.log(result.toString()) })
-        .catch((err) => { console.log(err.toString()) })
-    }
+async function checkRunAction (e, p) {
+  payload = e.payload
+  webhook = JSON.parse(payload)
+  secrets = p.secrets
+  const actionID = webhook.body.requested_action.identifier
+  console.log(`Check Run action: ${actionID} requested`)
+  switch (actionID) {
+    case 'delete_deployment':
+      const appName = webhook.body.repository.name
+      const imageTag = (webhook.body.check_run.head_sha).slice(0, 7)
+      const deploymentName = prodDeploy ? `${appName}` : `${appName}-${imageTag}-preview`
+      new PurgeDeployment(deploymentName).run()
+        .then((result) => {
+          new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral }).run()
+        })
+        .catch((err) => {
+          new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
+        })
+      break
+    default:
+      console.log(`No process defined for action: ${actionID}. Skipped`)
   }
 }
 
@@ -152,6 +161,23 @@ function registerCheckSuite () {
     new RegisterCheck(testStage),
     new RegisterCheck(deployStage)
   ]).catch(err => { console.log(err.toString()) })
+}
+
+async function prClosed (e, p) {
+  webhook = JSON.parse(e.payload)
+  if (webhook.action === 'closed') {
+    console.log('PullRequest closed')
+    let config = await parseConfig()
+    if (config.purgePreviewDeployments) {
+      console.log('purging all previews for this PR')
+      secrets = p.secrets
+      prNr = webhook.number
+      const previewLabel = `${webhook.repository.name}-${webhook.number}`
+      new PurgePreviews(previewLabel).run()
+        .then((result) => { return console.log(result.toString()) })
+        .catch((err) => { console.log(err.toString()) })
+    }
+  }
 }
 
 class RegisterCheck extends Job {
@@ -274,6 +300,19 @@ class PurgePreviews extends Job {
     this.tasks = [
       'helm init --client-only > /dev/null 2>&1',
       `helm del $(kubectl get deployment -n preview -o=jsonpath='{range .items[*]}{.metadata.name}{" "}{end}' -l anya.run/pr-preview=${previewLabel}) --purge`
+    ]
+  }
+}
+
+class PurgeDeployment extends Job {
+  constructor (deploymentName) {
+    super('purge-deployment', kubectlHelmImage)
+    this.useSource = false
+    this.privileged = true
+    this.serviceAccount = 'anya-deployer'
+    this.tasks = [
+      'helm init --client-only > /dev/null 2>&1',
+      `helm del ${deploymentName} --purge`
     ]
   }
 }
