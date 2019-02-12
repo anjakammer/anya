@@ -31,11 +31,14 @@ async function checkRunAction (e, p) {
   switch (actionID) {
     case 'delete_deployment':
       const appName = webhook.body.repository.name
-      const imageTag = (webhook.body.check_run.head_sha).slice(0, 7)
-      const deploymentName = prodDeploy ? `${appName}` : `${appName}-${imageTag}-preview`
+      const commit = (webhook.body.check_run.head_sha).slice(0, 7)
+      const deploymentName = prodDeploy ? `${appName}` : `${appName}-${commit}-preview`
       new PurgeDeployment(deploymentName).run()
         .then((result) => {
           new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral }).run()
+          if (!prodDeploy) {
+            new CommentPR(`:x: Preview Environment deleted for commit : ${commit}`).run()
+          }
         })
         .catch((err) => {
           new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
