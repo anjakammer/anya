@@ -1,6 +1,6 @@
 const { events, Job, Group } = require('brigadier')
 
-const checkRunImage = 'deis/brigade-github-check-run:latest'
+const checkRunImage = 'anjakammer/brigade-github-check-run:5c957dc'
 const kubectlHelmImage = 'dtzar/helm-kubectl'
 const buildStage = '1-Build'
 const testStage = '2-Test'
@@ -97,7 +97,8 @@ async function runDeployStage (config, appName, imageName, imageTag) {
   const url = `${host}${path}`
   return new Deploy(appName, imageName, imageTag, targetPort, host, path, url).run()
     .then((result) => {
-      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success }).run()
+      const actions = prodDeploy ? [] : [ { label: 'delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
+      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success, actions }).run()
       if (!prodDeploy && config.previewUrlAsComment) {
         new CommentPR(`Preview Environment is set up: <a href="https://${url}" target="_blank">${url}</a>`).run()
       }
@@ -245,18 +246,22 @@ class SlackNotify extends Job {
 }
 
 class SendSignal extends Job {
-  constructor ({ stage, logs, conclusion }) {
+  constructor ({ stage, logs, conclusion, actions }) {
     super(`result-of-${stage}`.toLowerCase(), checkRunImage)
     this.storage.enabled = false
+    this.imageForcePull = true
     this.useSource = false
     this.env = {
       CHECK_PAYLOAD: payload,
       CHECK_NAME: stage,
-      CHECK_TITLE: 'Description'
+      CHECK_TITLE: 'Description',
+      CHECK_CONCLUSION: conclusion,
+      CHECK_SUMMARY: `${stage} ${conclusion}`,
+      CHECK_TEXT: logs
     }
-    this.env.CHECK_CONCLUSION = conclusion
-    this.env.CHECK_SUMMARY = `${stage} ${conclusion}`
-    this.env.CHECK_TEXT = logs
+    if (typeof actions !== 'undefined' && actions.length > 0) {
+      this.env.CHECK_ACTIONS = JSON.stringify(actions)
+    }
   }
 }
 

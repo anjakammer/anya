@@ -52,7 +52,6 @@ projects: []
   #   #  ...
   #   #  ...
   #   #  -----END RSA PRIVATE KEY-----
-  #   imagePullSecret: "" # to pull from private image registries
 
 certificate: {}
   # name:
