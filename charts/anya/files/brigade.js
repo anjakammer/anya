@@ -22,33 +22,6 @@ events.on('check_run:rerequested', checkRequested)
 events.on('check_run:requested_action', checkRunAction)
 events.on('pull_request', prClosed)
 
-async function checkRunAction (e, p) {
-  payload = e.payload
-  webhook = JSON.parse(payload)
-  secrets = p.secrets
-  const actionID = webhook.body.requested_action.identifier
-  console.log(`Check Run action: ${actionID} requested`)
-  switch (actionID) {
-    case 'delete_deployment':
-      const appName = webhook.body.repository.name
-      const commit = (webhook.body.check_run.head_sha).slice(0, 7)
-      const deploymentName = prodDeploy ? `${appName}` : `${appName}-${commit}-preview`
-      new PurgeDeployment(deploymentName).run()
-        .then((result) => {
-          new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral }).run()
-          if (!prodDeploy) {
-            new CommentPR(`:x: Preview Environment deleted for commit : ${commit}`).run()
-          }
-        })
-        .catch((err) => {
-          new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
-        })
-      break
-    default:
-      console.log(`No process defined for action: ${actionID}. Skipped`)
-  }
-}
-
 async function checkRequested (e, p) {
   console.log('Check Suite requested')
   payload = e.payload
@@ -88,7 +61,7 @@ async function runBuildStage (imageName) {
         new SendSignal({ stage: buildStage, logs: err.toString(), conclusion: failure }),
         new SendSignal({ stage: testStage, logs: '', conclusion: cancelled }),
         new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled })
-      ]))
+      ])).catch((err) => { console.log(err.toString()) })
 }
 
 async function runTestStage (imageName, testStageTasks) {
@@ -99,7 +72,7 @@ async function runTestStage (imageName, testStageTasks) {
       Group.runEach([
         new SendSignal({ stage: testStage, logs: err.toString(), conclusion: failure }),
         new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled })
-      ]))
+      ])).catch((err) => { console.log(err.toString()) })
 }
 
 async function runDeployStage (config, appName, imageName, imageTag) {
@@ -113,14 +86,19 @@ async function runDeployStage (config, appName, imageName, imageTag) {
       new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success, actions }).run()
       if (!prodDeploy && config.previewUrlAsComment) {
         new CommentPR(`Preview Environment is set up: <a href="https://${url}" target="_blank">${url}</a>`).run()
+          .catch((err) => { console.log(err.toString()) })
       }
       if (config.slackNotifyOnSuccess) {
         new SlackNotify(`Successful Deployment of ${appName}`, `<https://${url}>`).run()
       }
     })
     .catch((err) => {
-      if (config.slackNotifyOnFailure) { new SlackNotify(`Failed Deployment of ${appName}`, imageName).run() }
+      if (config.slackNotifyOnFailure) {
+        new SlackNotify(`Failed Deployment of ${appName}`, imageName).run()
+          .catch((err) => { console.log(err.toString()) })
+      }
       return new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
+        .catch((err) => { console.log(err.toString()) })
     })
 }
 
@@ -166,6 +144,21 @@ function registerCheckSuite () {
   ]).catch(err => { console.log(err.toString()) })
 }
 
+async function checkRunAction (e, p) {
+  payload = e.payload
+  webhook = JSON.parse(payload)
+  secrets = p.secrets
+  const actionID = webhook.body.requested_action.identifier
+  console.log(`Check Run action: ${actionID} requested`)
+  switch (actionID) {
+    case 'delete_deployment':
+      deleteDeployment()
+      break
+    default:
+      console.log(`No process defined for action: ${actionID}. Skipped`)
+  }
+}
+
 async function prClosed (e, p) {
   webhook = JSON.parse(e.payload)
   if (webhook.action === 'closed') {
@@ -181,6 +174,26 @@ async function prClosed (e, p) {
         .catch((err) => { console.log(err.toString()) })
     }
   }
+}
+
+function deleteDeployment () {
+  const appName = webhook.body.repository.name
+  const commit = (webhook.body.check_run.head_sha).slice(0, 7)
+  const deploymentName = prodDeploy ? `${appName}` : `${appName}-${commit}-preview`
+  new DeleteDeployment(deploymentName).run()
+    .then((result) => {
+      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral }).run()
+        .catch((err) => { console.log(err.toString()) })
+      prNr = webhook.body.check_run.pull_requests[0].number
+      if (prNr !== 0) {
+        new CommentPR(`:x: Preview Environment deleted for commit : ${commit}`).run()
+          .catch((err) => { console.log(err.toString()) })
+      }
+    })
+    .catch((err) => {
+      new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
+        .catch((err) => { console.log(err.toString()) })
+    })
 }
 
 class RegisterCheck extends Job {
@@ -307,9 +320,9 @@ class PurgePreviews extends Job {
   }
 }
 
-class PurgeDeployment extends Job {
+class DeleteDeployment extends Job {
   constructor (deploymentName) {
-    super('purge-deployment', kubectlHelmImage)
+    super('delete-deployment', kubectlHelmImage)
     this.useSource = false
     this.privileged = true
     this.serviceAccount = 'anya-deployer'
@@ -320,4 +333,4 @@ class PurgeDeployment extends Job {
   }
 }
 
-module.exports = { parseConfig, registerCheckSuite, runCheckSuite, rerequestCheckSuite, runBuildStage, runTestStage, runDeployStage }
+module.exports = { parseConfig, registerCheckSuite, runCheckSuite, rerequestCheckSuite, runBuildStage, runTestStage, runDeployStage, deleteDeployment }
