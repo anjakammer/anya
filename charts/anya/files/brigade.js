@@ -1,6 +1,6 @@
 const { events, Job, Group } = require('brigadier')
 
-const checkRunImage = 'anjakammer/brigade-github-check-run:5c957dc'
+const checkRunImage = 'anjakammer/brigade-github-check-run:abe7e88'
 const kubectlHelmImage = 'dtzar/helm-kubectl'
 const buildStage = '1-Build'
 const testStage = '2-Test'
@@ -18,7 +18,6 @@ let secrets = ''
 
 events.on('check_suite:requested', checkRequested)
 events.on('check_suite:rerequested', checkRequested)
-events.on('check_run:rerequested', checkRequested)
 events.on('check_run:requested_action', checkRunAction)
 events.on('pull_request', prClosed)
 
@@ -46,44 +45,66 @@ async function runCheckSuite (config) {
   const appName = webhook.body.repository.name
   const imageTag = (webhook.body.check_suite.head_sha).slice(0, 7)
   const imageName = `${secrets.DOCKER_REPO}/${appName}:${imageTag}`
+  const port = await getApplicationPort() // TODO fails :/
+  console.log(port)
+  // await runBuildStage(imageName)
+  // await runTestStage(imageName, config.testStageTasks)
+  // await runDeployStage(config, appName, imageName, imageTag)
+}
 
-  await runBuildStage(imageName)
-  await runTestStage(imageName, config.testStageTasks)
-  await runDeployStage(config, appName, imageName, imageTag)
+async function getApplicationPort () {
+  const dockerfileParser = new Job('parse-dockerfile', 'anjakammer/dockerfile-parser:latest')
+  dockerfileParser.env.PATH = '/src/Dockerfile'
+  dockerfileParser.env.KEY = 'EXPOSE'
+  dockerfileParser.imageForcePull = true
+  dockerfileParser.run()
+    .then((result) => {
+      let dockerfile = result.toString()
+      dockerfile = JSON.parse(dockerfile.substring(dockerfile.indexOf('{') - 1, dockerfile.lastIndexOf('}') + 1))
+      return dockerfile.port
+    })
+    .catch(err => { console.log(err); return '' })
 }
 
 async function runBuildStage (imageName) {
+  const startedAt = new Date().toISOString()
   return new Build(imageName).run()
     .then((result) =>
-      new SendSignal({ stage: buildStage, logs: result.toString(), conclusion: success }).run())
+      new SendSignal({ stage: buildStage, logs: result.toString(), conclusion: success, startedAt }).run())
     .catch((err) =>
       Group.runEach([
-        new SendSignal({ stage: buildStage, logs: err.toString(), conclusion: failure }),
-        new SendSignal({ stage: testStage, logs: '', conclusion: cancelled }),
-        new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled })
+        new SendSignal({ stage: buildStage, logs: err.toString(), conclusion: failure, startedAt }),
+        new SendSignal({ stage: testStage, logs: '', conclusion: cancelled, startedAt }),
+        new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled, startedAt })
       ])).catch((err) => { console.log(err.toString()) })
 }
 
 async function runTestStage (imageName, testStageTasks) {
+  const startedAt = new Date().toISOString()
   return new Test(testStageTasks, imageName).run()
     .then((result) =>
-      new SendSignal({ stage: testStage, logs: result.toString(), conclusion: success }).run())
+      new SendSignal({ stage: testStage, logs: result.toString(), conclusion: success, startedAt }).run())
     .catch((err) =>
       Group.runEach([
-        new SendSignal({ stage: testStage, logs: err.toString(), conclusion: failure }),
-        new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled })
+        new SendSignal({ stage: testStage, logs: err.toString(), conclusion: failure, startedAt }),
+        new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled, startedAt })
       ])).catch((err) => { console.log(err.toString()) })
 }
 
 async function runDeployStage (config, appName, imageName, imageTag) {
-  const targetPort = 8080 // TODO fetch this from dockerfile
+  const targetPort = await getApplicationPort()
+  if (targetPort === '') {
+    return console.log('No port definition found in Dockerfile. Check if you Dockerfile is present in the root directory.')
+  }
   const host = prodDeploy ? secrets.PROD_HOST : secrets.PREV_HOST
   const path = prodDeploy ? secrets.PROD_PATH : `/preview/${appName}/${imageTag}`
   const url = `${host}${path}`
+  const startedAt = new Date().toISOString()
+
   return new Deploy(appName, imageName, imageTag, targetPort, host, path, url).run()
     .then((result) => {
       const actions = prodDeploy ? [] : [ { label: 'Delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
-      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success, actions }).run()
+      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success, actions, startedAt }).run()
       if (!prodDeploy && config.previewUrlAsComment) {
         new CommentPR(`Preview Environment is set up: <a href="https://${url}" target="_blank">${url}</a>`).run()
           .catch((err) => { console.log(err.toString()) })
@@ -97,7 +118,7 @@ async function runDeployStage (config, appName, imageName, imageTag) {
         new SlackNotify(`Failed Deployment of ${appName}`, imageName).run()
           .catch((err) => { console.log(err.toString()) })
       }
-      return new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
+      return new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure, startedAt }).run()
         .catch((err) => { console.log(err.toString()) })
     })
 }
@@ -180,9 +201,11 @@ function deleteDeployment () {
   const appName = webhook.body.repository.name
   const commit = (webhook.body.check_run.head_sha).slice(0, 7)
   const deploymentName = prodDeploy ? `${appName}` : `${appName}-${commit}-preview`
+  const startedAt = new Date().toISOString()
+
   new DeleteDeployment(deploymentName).run()
     .then((result) => {
-      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral }).run()
+      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral, startedAt }).run()
         .catch((err) => { console.log(err.toString()) })
       prNr = webhook.body.check_run.pull_requests[0].number
       if (prNr !== 0) {
@@ -191,7 +214,7 @@ function deleteDeployment () {
       }
     })
     .catch((err) => {
-      new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure }).run()
+      new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure, startedAt }).run()
         .catch((err) => { console.log(err.toString()) })
     })
 }
@@ -288,7 +311,7 @@ class SlackNotify extends Job {
 }
 
 class SendSignal extends Job {
-  constructor ({ stage, logs, conclusion, actions }) {
+  constructor ({ stage, logs, conclusion, actions, startedAt }) {
     super(`result-of-${stage}`.toLowerCase(), checkRunImage)
     this.storage.enabled = false
     this.imageForcePull = true
@@ -298,6 +321,7 @@ class SendSignal extends Job {
       CHECK_NAME: stage,
       CHECK_TITLE: 'Description',
       CHECK_CONCLUSION: conclusion,
+      CHECK_STARTED_AT: startedAt,
       CHECK_SUMMARY: `${stage} ${conclusion}`,
       CHECK_TEXT: logs
     }
