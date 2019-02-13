@@ -54,7 +54,7 @@ async function runCheckSuite (config) {
 
 async function getApplicationPort () {
   const dockerfileParser = new Job('parse-dockerfile', 'anjakammer/dockerfile-parser:latest')
-  dockerfileParser.env.PATH = '/src/Dockerfile'
+  dockerfileParser.env.DOCKERFILE_PATH = '/src/Dockerfile'
   dockerfileParser.env.KEY = 'EXPOSE'
   dockerfileParser.imageForcePull = true
   dockerfileParser.run()
