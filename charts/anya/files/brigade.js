@@ -30,8 +30,8 @@ async function checkRequested (e, p) {
   const pr = webhook.body.check_suite.pull_requests
   prodDeploy = webhook.body.check_suite.head_branch === secrets.PROD_BRANCH
   if (pr.length !== 0 || prodDeploy) {
-    prNr = pr.length !== 0 ? webhook.body.check_suite.pull_requests[0].number : 0
-    let config = await parseConfig()
+    prNr = pr.length !== 0 ? pr[0].number : 0
+    const config = await parseConfig()
     return runCheckSuite(config)
       .then(() => { return console.log('Finished Check Suite') })
       .catch((err) => { console.log(err.toString()) })
@@ -45,25 +45,16 @@ async function runCheckSuite (config) {
   const appName = webhook.body.repository.name
   const imageTag = (webhook.body.check_suite.head_sha).slice(0, 7)
   const imageName = `${secrets.DOCKER_REPO}/${appName}:${imageTag}`
-  const port = await getApplicationPort() // TODO fails :/
-  console.log(port)
-  // await runBuildStage(imageName)
-  // await runTestStage(imageName, config.testStageTasks)
-  // await runDeployStage(config, appName, imageName, imageTag)
-}
 
-async function getApplicationPort () {
-  const dockerfileParser = new Job('parse-dockerfile', 'anjakammer/dockerfile-parser:latest')
-  dockerfileParser.env.DOCKERFILE_PATH = '/src/Dockerfile'
-  dockerfileParser.env.KEY = 'EXPOSE'
-  dockerfileParser.imageForcePull = true
-  dockerfileParser.run()
-    .then((result) => {
-      let dockerfile = result.toString()
-      dockerfile = JSON.parse(dockerfile.substring(dockerfile.indexOf('{') - 1, dockerfile.lastIndexOf('}') + 1))
-      return dockerfile.port
-    })
-    .catch(err => { console.log(err); return '' })
+  await runBuildStage(imageName)
+  await runTestStage(imageName, config.testStageTasks)
+  if (config.automaticDeployment) {
+    await runDeployStage(config, appName, imageName, imageTag)
+  }
+  const deploymentMessage = 'Please press the button "Perform Deployment".'
+  const actions = [ { label: 'Perform Deployment', identifier: 'perform_deployment', description: 'triggers the deployment' } ]
+  await new SendSignal({ stage: deployStage, logs: deploymentMessage, conclusion: neutral, actions }).run()
+    .catch((err) => { console.log(err.toString()) })
 }
 
 async function runBuildStage (imageName) {
@@ -93,14 +84,16 @@ async function runTestStage (imageName, testStageTasks) {
 
 async function runDeployStage (config, appName, imageName, imageTag) {
   const targetPort = await getApplicationPort()
-  if (targetPort === '') {
+  if (typeof targetPort === 'undefined' || targetPort === '') {
     return console.log('No port definition found in Dockerfile. Check if you Dockerfile is present in the root directory.')
   }
+  console.log('targetport is' + targetPort)
   const host = prodDeploy ? secrets.PROD_HOST : secrets.PREV_HOST
   const path = prodDeploy ? secrets.PROD_PATH : `/preview/${appName}/${imageTag}`
   const url = `${host}${path}`
   const startedAt = new Date().toISOString()
 
+  console.log('vor deploy')
   return new Deploy(appName, imageName, imageTag, targetPort, host, path, url).run()
     .then((result) => {
       const actions = prodDeploy ? [] : [ { label: 'Delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
@@ -132,6 +125,7 @@ async function parseConfig () {
       let config = result.toString()
       config = JSON.parse(config.substring(config.indexOf('{') - 1, config.lastIndexOf('}') + 1))
       return {
+        automaticDeployment: config.deploy.automaticDeployment || false,
         slackNotifyOnSuccess: config.deploy.onSuccess.slackNotify || false,
         slackNotifyOnFailure: config.deploy.onFailure.slackNotify || false,
         previewUrlAsComment: config.deploy.onSuccess.previewUrlAsComment || false,
@@ -140,6 +134,20 @@ async function parseConfig () {
       }
     })
     .catch(err => { throw err })
+}
+
+async function getApplicationPort () {
+  const dockerfileParser = new Job('parse-dockerfile', 'anjakammer/dockerfile-parser:latest')
+  dockerfileParser.env.DOCKERFILE_PATH = '/src/Dockerfile'
+  dockerfileParser.env.KEY = 'EXPOSE'
+  dockerfileParser.imageForcePull = true
+  return dockerfileParser.run()
+    .then((result) => {
+      let dockerfile = result.toString()
+      dockerfile = JSON.parse(dockerfile.substring(dockerfile.indexOf('{') - 1, dockerfile.lastIndexOf('}') + 1))
+      return dockerfile.port
+    })
+    .catch(err => { console.log(err); return '' })
 }
 
 function rerequestCheckSuite () {
@@ -175,6 +183,16 @@ async function checkRunAction (e, p) {
     case 'delete_deployment':
       deleteDeployment()
       break
+    case 'perform_deployment':
+      prodDeploy = webhook.body.check_run.head_branch === secrets.PROD_BRANCH
+      const pr = webhook.body.check_run.pull_requests
+      if (pr.length !== 0 || prodDeploy) { prNr = pr.length !== 0 ? pr[0].number : 0 }
+      const config = await parseConfig()
+      const appName = webhook.body.repository.name
+      const imageTag = (webhook.body.check_run.head_sha).slice(0, 7)
+      const imageName = `${secrets.DOCKER_REPO}/${appName}:${imageTag}`
+      runDeployStage(config, appName, imageName, imageTag)
+      break
     default:
       console.log(`No process defined for action: ${actionID}. Skipped`)
   }
@@ -184,7 +202,7 @@ async function prClosed (e, p) {
   webhook = JSON.parse(e.payload)
   if (webhook.action === 'closed') {
     console.log('PullRequest closed')
-    let config = await parseConfig()
+    const config = await parseConfig()
     if (config.purgePreviewDeployments) {
       console.log('purging all previews for this PR')
       secrets = p.secrets
@@ -356,5 +374,3 @@ class DeleteDeployment extends Job {
     ]
   }
 }
-
-module.exports = { parseConfig, registerCheckSuite, runCheckSuite, rerequestCheckSuite, runBuildStage, runTestStage, runDeployStage, deleteDeployment }
