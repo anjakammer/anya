@@ -47,12 +47,14 @@ async function runCheckSuite (config) {
   const imageTag = (webhook.body.check_suite.head_sha).slice(0, 7)
   const imageName = `${secrets.DOCKER_REPO}/${appName}:${imageTag}`
 
-  await runBuildStage(imageName)
-  await runTestStage(imageName, config.testStageTasks)
-  if (config.automaticDeployment) {
-    return runDeployStage(config, appName, imageName, imageTag)
-  }
-  manualDeployment()
+  runBuildStage(imageName)
+    .then(() => runTestStage(imageName, config.testStageTasks))
+    .then(() => {
+      if (config.automaticDeployment) {
+        return runDeployStage(config, appName, imageName, imageTag)
+      }
+      manualDeployment()
+    }).catch((err) => { console.log(err.toString()) })
 }
 
 async function runBuildStage (imageName) {
@@ -60,12 +62,14 @@ async function runBuildStage (imageName) {
   return new Build(imageName).run()
     .then((result) =>
       new SendSignal({ stage: buildStage, logs: result.toString(), conclusion: success, startedAt }).run())
-    .catch((err) =>
+    .catch((err) => {
       Group.runEach([
         new SendSignal({ stage: buildStage, logs: err.toString(), conclusion: failure, startedAt }),
         new SendSignal({ stage: testStage, logs: '', conclusion: cancelled, startedAt }),
         new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled, startedAt })
-      ])).catch((err) => { console.log(err.toString()) })
+      ])
+      throw err
+    })
 }
 
 async function runTestStage (imageName, testStageTasks) {
@@ -73,11 +77,13 @@ async function runTestStage (imageName, testStageTasks) {
   return new Test(testStageTasks, imageName).run()
     .then((result) =>
       new SendSignal({ stage: testStage, logs: result.toString(), conclusion: success, startedAt }).run())
-    .catch((err) =>
+    .catch((err) => {
       Group.runEach([
         new SendSignal({ stage: testStage, logs: err.toString(), conclusion: failure, startedAt }),
         new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled, startedAt })
-      ])).catch((err) => { console.log(err.toString()) })
+      ])
+      throw err
+    })
 }
 
 async function runDeployStage (config, appName, imageName, imageTag) {
@@ -277,6 +283,7 @@ class Test extends Job {
     super(testStage.toLowerCase(), imageName)
     this.imageForcePull = true
     this.useSource = false
+    this.imagePullSecrets = ['regcred']
     this.tasks = testStageTasks
   }
 }
