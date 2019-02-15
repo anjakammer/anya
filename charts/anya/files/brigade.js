@@ -9,6 +9,7 @@ const failure = 'failure'
 const cancelled = 'cancelled'
 const success = 'success'
 const neutral = 'neutral'
+const performDeploymentAction = [ { label: 'Perform Deployment', identifier: 'perform_deployment', description: 'triggers the deployment' } ]
 
 let prodDeploy = false
 let prNr = 0
@@ -49,12 +50,9 @@ async function runCheckSuite (config) {
   await runBuildStage(imageName)
   await runTestStage(imageName, config.testStageTasks)
   if (config.automaticDeployment) {
-    await runDeployStage(config, appName, imageName, imageTag)
+    return runDeployStage(config, appName, imageName, imageTag)
   }
-  const deploymentMessage = 'Please press the button "Perform Deployment".'
-  const actions = [ { label: 'Perform Deployment', identifier: 'perform_deployment', description: 'triggers the deployment' } ]
-  await new SendSignal({ stage: deployStage, logs: deploymentMessage, conclusion: neutral, actions }).run()
-    .catch((err) => { console.log(err.toString()) })
+  manualDeployment()
 }
 
 async function runBuildStage (imageName) {
@@ -87,13 +85,11 @@ async function runDeployStage (config, appName, imageName, imageTag) {
   if (typeof targetPort === 'undefined' || targetPort === '') {
     return console.log('No port definition found in Dockerfile. Check if you Dockerfile is present in the root directory.')
   }
-  console.log('targetport is' + targetPort)
   const host = prodDeploy ? secrets.PROD_HOST : secrets.PREV_HOST
   const path = prodDeploy ? secrets.PROD_PATH : `/preview/${appName}/${imageTag}`
   const url = `${host}${path}`
   const startedAt = new Date().toISOString()
 
-  console.log('vor deploy')
   return new Deploy(appName, imageName, imageTag, targetPort, host, path, url).run()
     .then((result) => {
       const actions = prodDeploy ? [] : [ { label: 'Delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
@@ -103,7 +99,8 @@ async function runDeployStage (config, appName, imageName, imageTag) {
           .catch((err) => { console.log(err.toString()) })
       }
       if (config.slackNotifyOnSuccess) {
-        new SlackNotify(`Successful Deployment of ${appName}`, `<https://${url}>`).run()
+        return new SlackNotify(`Successful Deployment of ${appName}`, `<https://${url}>`).run()
+          .catch((err) => { console.log(err.toString()) })
       }
     })
     .catch((err) => {
@@ -181,9 +178,11 @@ async function checkRunAction (e, p) {
   console.log(`Check Run action: ${actionID} requested`)
   switch (actionID) {
     case 'delete_deployment':
+      new RegisterCheck(deployStage).run().catch(err => { console.log(err.toString()) })
       deleteDeployment()
       break
     case 'perform_deployment':
+      new RegisterCheck(deployStage).run().catch(err => { console.log(err.toString()) })
       prodDeploy = webhook.body.check_run.head_branch === secrets.PROD_BRANCH
       const pr = webhook.body.check_run.pull_requests
       if (pr.length !== 0 || prodDeploy) { prNr = pr.length !== 0 ? pr[0].number : 0 }
@@ -223,7 +222,7 @@ function deleteDeployment () {
 
   new DeleteDeployment(deploymentName).run()
     .then((result) => {
-      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral, startedAt }).run()
+      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral, performDeploymentAction, startedAt }).run()
         .catch((err) => { console.log(err.toString()) })
       prNr = webhook.body.check_run.pull_requests[0].number
       if (prNr !== 0) {
@@ -235,6 +234,12 @@ function deleteDeployment () {
       new SendSignal({ stage: deployStage, logs: err.toString(), conclusion: failure, startedAt }).run()
         .catch((err) => { console.log(err.toString()) })
     })
+}
+
+function manualDeployment () {
+  const deploymentMessage = 'Please press the button "Perform Deployment".'
+  return new SendSignal({ stage: deployStage, logs: deploymentMessage, conclusion: neutral, performDeploymentAction }).run()
+    .catch((err) => { console.log(err.toString()) })
 }
 
 class RegisterCheck extends Job {
@@ -332,16 +337,17 @@ class SendSignal extends Job {
   constructor ({ stage, logs, conclusion, actions, startedAt }) {
     super(`result-of-${stage}`.toLowerCase(), checkRunImage)
     this.storage.enabled = false
-    this.imageForcePull = true
     this.useSource = false
     this.env = {
       CHECK_PAYLOAD: payload,
       CHECK_NAME: stage,
       CHECK_TITLE: 'Description',
       CHECK_CONCLUSION: conclusion,
-      CHECK_STARTED_AT: startedAt,
       CHECK_SUMMARY: `${stage} ${conclusion}`,
       CHECK_TEXT: logs
+    }
+    if (typeof startedAt !== 'undefined' && startedAt.length > 0) {
+      this.env.CHECK_STARTED_AT = startedAt
     }
     if (typeof actions !== 'undefined' && actions.length > 0) {
       this.env.CHECK_ACTIONS = JSON.stringify(actions)
