@@ -70,7 +70,7 @@ async function runBuildStage (imageName) {
         new SendSignal({ stage: testStage, logs: '', conclusion: cancelled, startedAt }),
         new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled, startedAt })
       ])
-      throw err
+      throw err // to skip the next pipeline stages
     })
 }
 
@@ -84,7 +84,7 @@ async function runTestStage (imageName, testStageTasks) {
         new SendSignal({ stage: testStage, logs: err.toString(), conclusion: failure, startedAt }),
         new SendSignal({ stage: deployStage, logs: '', conclusion: cancelled, startedAt })
       ])
-      throw err
+      throw err // to skip the next pipeline stages
     })
 }
 
@@ -138,7 +138,7 @@ async function parseConfig () {
         testStageTasks: config.test.tasks || false
       }
     })
-    .catch(err => { throw err })
+    .catch(err => { throw err }) // to skip the next pipeline stages
 }
 
 async function getApplicationPort () {
