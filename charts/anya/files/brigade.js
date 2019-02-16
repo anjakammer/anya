@@ -16,6 +16,7 @@ let prNr = 0
 let payload = ''
 let webhook = ''
 let secrets = ''
+let projectID = ''
 
 events.on('check_suite:requested', checkRequested)
 events.on('check_suite:rerequested', checkRequested)
@@ -27,6 +28,7 @@ async function checkRequested (e, p) {
   payload = e.payload
   webhook = JSON.parse(payload)
   secrets = p.secrets
+  projectID = p.id
 
   const pr = webhook.body.check_suite.pull_requests
   prodDeploy = webhook.body.check_suite.head_branch === secrets.PROD_BRANCH
@@ -283,7 +285,7 @@ class Test extends Job {
     super(testStage.toLowerCase(), imageName)
     this.imageForcePull = true
     this.useSource = false
-    this.imagePullSecrets = ['regcred']
+    this.imagePullSecrets = [projectID.replace('brigade-', 'regcred-')]
     this.tasks = testStageTasks
   }
 }
