@@ -191,8 +191,8 @@ async function checkRunAction (e, p) {
       break
     case 'perform_deployment':
       new RegisterCheck(deployStage).run().catch(err => { console.log(err.toString()) })
-      prodDeploy = webhook.body.check_run.head_branch === secrets.PROD_BRANCH
-      const pr = webhook.body.check_run.pull_requests
+      prodDeploy = webhook.body.check_run.check_suite.head_branch === secrets.PROD_BRANCH
+      const pr = webhook.body.check_run.check_suite.pull_requests
       if (pr.length !== 0 || prodDeploy) { prNr = pr.length !== 0 ? pr[0].number : 0 }
       const config = await parseConfig()
       const appName = webhook.body.repository.name
@@ -230,7 +230,7 @@ function deleteDeployment () {
 
   new DeleteDeployment(deploymentName).run()
     .then((result) => {
-      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral, performDeploymentAction, startedAt }).run()
+      new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: neutral, actions: performDeploymentAction, startedAt }).run()
         .catch((err) => { console.log(err.toString()) })
       prNr = webhook.body.check_run.pull_requests[0].number
       if (prNr !== 0) {
@@ -246,7 +246,7 @@ function deleteDeployment () {
 
 function manualDeployment () {
   const deploymentMessage = 'Please press the button "Perform Deployment".'
-  return new SendSignal({ stage: deployStage, logs: deploymentMessage, conclusion: neutral, performDeploymentAction }).run()
+  return new SendSignal({ stage: deployStage, logs: deploymentMessage, conclusion: neutral, actions: performDeploymentAction }).run()
     .catch((err) => { console.log(err.toString()) })
 }
 
@@ -296,6 +296,7 @@ class Deploy extends Job {
     const deploymentName = prodDeploy ? `${appName}` : `${appName}-${imageTag}-preview`
     const namespace = prodDeploy ? 'production' : 'preview'
     const previewLabel = prodDeploy || prNr === 0 ? '' : `,previewLabel=${appName}-${prNr}`
+    const imagePullSecret = projectID.replace('brigade-', 'regcred-')
     super(deployStage.toLowerCase(), kubectlHelmImage)
     this.useSource = false
     this.privileged = true
@@ -303,7 +304,7 @@ class Deploy extends Job {
     this.tasks = [
       'helm init --client-only > /dev/null 2>&1',
       'helm repo add anya https://storage.googleapis.com/anya-deployment/charts > /dev/null 2>&1',
-      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName}${previewLabel}`,
+      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName},imagePullSecret=${imagePullSecret}${previewLabel}`,
       `echo "URL: <a href="https://${url}" target="_blank">${url}</a>"`
     ]
   }
@@ -372,7 +373,8 @@ class PurgePreviews extends Job {
     this.serviceAccount = 'anya-deployer'
     this.tasks = [
       'helm init --client-only > /dev/null 2>&1',
-      `helm del $(kubectl get deployment -n preview -o=jsonpath='{range .items[*]}{.metadata.name}{" "}{end}' -l anya.run/pr-preview=${previewLabel}) --purge`
+      `DEPLOYMENTS=$(kubectl get deployment -n preview -o=jsonpath='{range .items[*]}{.metadata.name}{" "}{end}' -l anya.run/pr-preview=${previewLabel})`,
+      `if [ ! -z "$DEPLOYMENTS" ]; then helm del $DEPLOYMENTS --purge; fi`
     ]
   }
 }
