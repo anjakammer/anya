@@ -1,6 +1,5 @@
 # Default values for anya.
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 
 service:
   type: ClusterIP
@@ -8,9 +7,6 @@ service:
 
 ingress:
   host: anya.example.com
-
-  # annotations:
-  #   kubernetes.io/ingress.class: nginx
 
   ghAppServiceName: brigade-github-app-brigade-github-app
   ghAppServicePath: /events/github
