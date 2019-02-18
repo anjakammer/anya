@@ -19,7 +19,7 @@ anya is an abstraction of [Brigade](https://github.com/Azure/brigade); it config
 The DefaultScript is created as a configmap. The configmap name is used in the template for creating Brigade projects (`charts/anya/templates/brigade-projects.yaml`), so that every project uses this DefaultScript.
 
 #### Deployment
-anya uses [Helmsman](https://github.com/Praqma/helmsman) for the deployment. It is planned to utilize Terraform instead.
+anya uses [Helmsman](https://github.com/Praqma/helmsman) for the deployment. It is planned to utilize _Terraform_ instead.
 
 #### Makefile
 The Makefile of this repository has the following functions:

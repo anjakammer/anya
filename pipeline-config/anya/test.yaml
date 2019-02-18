@@ -1,0 +1,3 @@
+tasks:
+  - "echo 'Running Tests'"
+  - "npm test"
