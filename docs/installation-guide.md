@@ -55,7 +55,7 @@ You find a detailed explanation on how to configure your projects here: [Configu
 - Run `make helmsman-plan` to watch for error in your configuration
 - Run `make helmsman-apply` to deploy anya to your cluster. You can run this command repeatedly.
 
-## 9. Configure your Pipeline
+## 8. Configure your Pipeline
 Copy the folder `pipeline-config/anya` in all of your repositories that should use anya. There are 2 files:
 - `test.yaml`: Specify the commands to run for the test stage. Note: all the required test scripts need to be present in your container.
 - `deploy.yaml`: Turn on _Slack_ notifications, automatic deployments, or automatic deletion of old preview deployments.

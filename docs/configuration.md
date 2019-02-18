@@ -14,7 +14,7 @@ Please copy the files from the `template` directory in here and remove the `temp
 - `brigade-github-app-values.yaml`
   - _github.appID_: Here you need to provide the id of the GitHub App, you created.
   - _github.checkSuiteOnPR_: Leave this to `false`, unless you know what you do.
-  - _github.key_: Generate a private key at your GitHub App settings page, and put it in here. It is used to authenticate with the GitHub API on your behalf.
+  - _github.key_: Generate a private key at your GitHub App settings page, at put it in here. It is used to authenticate with the GitHub API on your behalf.
 
 
 ## Secure your configurations

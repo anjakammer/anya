@@ -5,7 +5,3 @@
 # configuration template files
 !anya-values.template.yaml
 !brigade-github-app-values.template.yaml
-!brigade-values.template.yaml
-!kashti-values.template.yaml
-!nginx-values.template.yaml
-!oauth2-proxy-values.template.yaml
