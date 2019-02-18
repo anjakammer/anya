@@ -1,4 +1,4 @@
-.PHONY : package lint helmsman-plan helmsman-apply purge-worker purge-preview update-pipeline
+.PHONY : package lint helmsman-plan helmsman-apply purge-worker purge-preview update-pipeline watch-jobs
 
 lint:
 	helm lint charts/anya/
@@ -24,3 +24,6 @@ purge-preview :
 update-pipeline :
 	kubectl delete cm anya-brigade-pipeline -n anya
 	kubectl create cm anya-brigade-pipeline --from-file=charts/anya/files/brigade.js -n anya
+
+watch-jobs :
+	watch -n 0,5 -t kubectl get pods -n anya -l component=job --field-selector=status.phase!=Succeeded
