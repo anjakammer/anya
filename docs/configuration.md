@@ -1,6 +1,5 @@
-# anya Configuration Files
-## Content of this directory
-This directory contains value files for the anya installation. The setup.toml file is referencing these files with the `valuesFile` option, to configure the helm deployments with custom values.
+# Configuration Files
+The directory `helmsman-config` contains value files for the anya installation. The setup.toml file is referencing these files with the `valuesFile` option, to configure the helm deployments with custom values.
 
 Please copy the files from the `template` directory in here and remove the `template` keyword from the file name for matching the required name.
 
@@ -12,6 +11,10 @@ Please copy the files from the `template` directory in here and remove the `temp
     - `kubectl create secret tls anya-tls --key path/to/private-key.key --cert path/to/origin-certificate.pem -n anya`
   - _projects_: This is an array of projects, as they define your application. You find an explanation for each value in the template. In short: you specify your docker registry credentials for pushing and pulling your container images. Additionally, you define the production host name and its TLS Certificate name. Note: the certificates need to be created in their respective namespace. So the certificate for the production environment needs to be present in the namespace 'production'.
   The ssh key is for your GitHub repository and is used to pull your code.
+- `brigade-github-app-values.yaml`
+  - _github.appID_: Here you need to provide the id of the GitHub App, you created.
+  - _github.checkSuiteOnPR_: Leave this to `false`, unless you know what you do.
+  - _github.key_: Generate a private key at your GitHub App settings page, at put it in here. It is used to authenticate with the GitHub API on your behalf. 
 
 
 ## Secure your configurations

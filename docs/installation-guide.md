@@ -29,7 +29,7 @@ anya uses _Helmsman_ to deploy its components to your Kubernetes cluster. _Helms
 
 ## 5. Create a GitHub App
 For the communication with _GitHub_ and to access your code repositories, anya needs to get registered as an authorized application (GitHub App).
-Please, follow the [instructions to create a GitHub App](https://github.com/Azure/brigade-github-app#1-create-a-github-app).
+Please, follow the [instructions to create a GitHub App](https://developer.github.com/apps/building-github-apps/creating-a-github-app/).
 - _Webhook Secret_ should be a secure passphrase, you need it later as the `SharedSecret`
 - _Homepage URL_ is anything you like. It is recommended to point to this documentation.
 - _Webhook URL_ is used by GitHub to notify anya about any repository events. Please consider a host name such as `anya.yourBusiness.com`. The full webhook URL would look like this: `https://anya.yourBusiness.com/events/github`
