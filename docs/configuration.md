@@ -1,4 +1,4 @@
-# Anya Configuration Files
+# anya Configuration Files
 ## Content of this directory
 This directory contains value files for the anya installation. The setup.toml file is referencing these files with the `valuesFile` option, to configure the helm deployments with custom values.
 

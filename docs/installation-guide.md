@@ -50,9 +50,9 @@ The anya GitHub App needs to subscribe to some events of your repositories:
 
 ## 6. Provide your Environment Configuration
 Copy the templates-files of `helmsman-config/templates` into `helmsman-config`.
-Remove the substring `-template` from the files.
+Remove the substring `.template` from the files.
 The most important file is `anya-values.yaml`; here you are defining your repositories to deploy your applications.
-You find a detailed explanation on how to configure anya here: [helmsman-config/README.md](../helmsman-config/README.md)
+You find a detailed explanation on how to configure anya here: [anya Configuration Files](configuration.md)
 
 ## 7. Apply the Configurations to your fresh Cluster
 - run `make helmsman-plan` to watch for error in your configuration
