@@ -19,14 +19,14 @@ anya is an abstraction of [Brigade](https://github.com/Azure/brigade); it config
 The DefaultScript is created as a configmap. The configmap name is used in the template for creating Brigade projects (`charts/anya/templates/brigade-projects.yaml`), so that every project uses this DefaultScript.
 
 #### Deployment
-anya uses [Helmsman](https://github.com/Praqma/helmsman) for the deployment. It is planned to utilize Terraform instead.
+anya uses [Helmsman](https://github.com/Praqma/helmsman) for the deployment. It is planned to utilize _Terraform_ instead.
 
 #### Makefile
 The Makefile of this repository has the following functions:
-- `make lint` calls the linter of helm, to check your all charts in here: `charts/*`
-- `make package` packages all charts and pushes it to the anya chart repository.
+- `make lint` calls the linter of helm, to check your the charts in here: `charts/*`
+- `make package` packages all charts and pushes them to the anya chart repository.
 - `make helmsman-plan` Dry-Run for the deployment with verbose output
-- `make helmsman-apply` Will apply the deployment with
+- `make helmsman-apply` Will apply the deployment
 - `make purge-worker` If you cannot wait for _vacuum_ to free your cluster from all Brigade jobs and builds - use this.
 - `make purge-previews` This will delete all preview deployments, made by anya.
 - `make update-pipeline` For pipeline development without packaging. This function will update the DefaultScript in your cluster. Do not forget to package the chart to publish your changes permanently.

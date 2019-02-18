@@ -1,0 +1,12 @@
+automaticDeployment: false
+
+onSuccess:
+  slackNotify: true
+  previewUrlAsComment: true
+
+onFailure:
+  slackNotify: true
+
+pullRequest:
+  onClose:
+    purgePreviewDeployments: true
