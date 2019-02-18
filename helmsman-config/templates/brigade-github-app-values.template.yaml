@@ -2,28 +2,25 @@
 rbac:
   enabled: true
 
+# please, do not change this values
 service:
   name: brigade-github-app
   type: ClusterIP
 
 ingress:
+  # please, do not change this value
   enabled: false
-  # # Used to create an Ingress record.
-  # hosts:
-  #   - test.anya.run
-  # annotations:
-  #   kubernetes.io/ingress.class: nginx
-  #   kubernetes.io/tls-acme: "true"
-  #   kubernetes.io/ingress.global-static-ip-name: anya-test-ip
-  # tls:
-  #   # Secrets must be manually created in the namespace.
-  #   - secretName: anya-tls
-  #     hosts:
-  #     - test.anya.run
 
+# please, DO change this values
 github:
-  # The x509 PEM-formatted keyfile GitHub issued for you App.
-  key: |
-    -----BEGIN RSA PRIVATE KEY-----
-    XXX
-    -----END RSA PRIVATE KEY-----
+  # This represents the unique ID for a GitHub App
+  # The value can be retrieved from the main App page or any inbound webhook payloads
+  appID: 00000
+  # Trigger a Check Suite on Pull Requests
+  # This will need to be set to true to enable running Check Suites on PRs originating from forks
+  checkSuiteOnPR: false
+  # The x509 PEM-formatted keyfile GitHub issued for your App.
+  # key: |
+  #   -----BEGIN RSA PRIVATE KEY-----
+  #
+  #   -----END RSA PRIVATE KEY-----

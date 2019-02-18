@@ -1,0 +1,35 @@
+# Set this to true to enable Kubernetes RBAC support (recommended)
+rbac:
+  enabled: true
+
+kashti:
+  enabled: false  # we use anya instead
+
+service:
+  name: brigade-api
+  type: ClusterIP
+
+gw:
+  enabled: false
+  registry: deis
+  name: brigade-github-gateway
+  #tag:
+  #pullPolicy: IfNotPresent
+  # The author associations who are allowed to have PRs built
+  # Classes are: COLLABORATOR, CONTRIBUTOR, OWNER, NONE, MEMBER, FIRST_TIMER, FIRST_TME_CONTRIBUTOR
+  # See https://developer.github.com/v4/enum/commentauthorassociation/
+  # To completely disable pull request builds, leave this list blank.
+  allowedAuthorRoles:
+    - OWNER
+    - MEMBER
+    - COLLABORATOR
+  serviceAccount:
+    create: true
+    name:
+  # The service is for the Brigade gateway. If you do not want to have Brigade
+  # listening for incomming GitHub requests, disable this.
+  service:
+    name: brigade-service
+    type: ClusterIP
+    externalPort: 7744
+    internalPort: 7744

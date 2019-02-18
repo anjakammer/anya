@@ -1,35 +1,42 @@
-# Default values for anya.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 ingress:
+  # your preview environment domain
   host: anya.example.com
 
-  # annotations:
-  #   nginx.ingress.kubernetes.io/ssl-redirect: "false"	# remove this, if TLS is active
-  #   kubernetes.io/ingress.allow-http: "true" # remove this, if TLS is active
-
+  # you must create all TLS Certificate Secrets on your own
+  # for the namespaces: anya, production, preview.
   tls:
-    # Secrets must be manually created in the namespace.
+      # The TLS Certificate Secret name for your preview environment domain
     - secretName: anya-tls
       hosts:
+      # your preview Environment domain
       - anya.example.com
 
-# oauthProxy:
-#   enabled: true
-#   authUrl: "https://test.anya.run/oauth2/auth"
-#   authSignin: "https://test.anya.run/oauth2/start"
-#   authUrl: "https://$host/oauth2/auth"
-#   authSignin: "https://$host/oauth2/start?rd=$request_uri"
-#   authSignin: "https://auth.example.com/oauth2/start?rd=https://$host$request_uri$is_args$args"
-
-certificate: {}
-  # name:
-  # crt: |
-  #   -----BEGIN CERTIFICATE-----
-  #   <base64>
-  #   -----END CERTIFICATE-----
-  # key: |
-  #   -----BEGIN RSA PRIVATE KEY-----
-  #   <base64>
-  #   -----END RSA PRIVATE KEY-----
+projects: []
+  # - project: "GitHub-Account/my-app" # Name of the project, in the form "user/project"
+  #   repository: "github.com/GitHub-Account/my-app" # Domain/Org/Project
+  #   cloneURL: "https://github.com/GitHub-Account/my-app.git"
+  #   sharedSecret: "superSecret" # Create this for the GitHub App
+  #   github:
+  #     token: "1234superSecret5678" # GitHub App > OAuth credentials > Client secret
+  #   initGitSubmodules: "false"  # submodules should be checked out
+  #   secrets:
+  #     GH_APP_NAME: "my-anya-ci" # name of the GitHub App for anya
+  #     DOCKER_REGISTRY: "docker.io" # docker.io
+  #     DOCKER_REPO: my-organisation # organisation
+  #     DOCKER_USER: my-username
+  #     DOCKER_PASS: "superSecret"
+  #     SLACK_CHANNEL: "CI/CD"
+  #     SLACK_WEBHOOK: "https://hooks.slack.com/services/ABC/XYZ/ndfjhkfdjk"
+  #     PREV_HOST: "anya.example.com"  # anya.example.com for preview deployments
+  #     PREV_TLS: "anya-tls" # name of the TLS certificate for PREV_HOST
+  #     PROD_HOST: example.com # root domain of the application in production
+  #     PROD_PATH: "/"  # endpoint/path of your application in production
+  #     PROD_TLS: "prod-tls"  # name of the TLS certificate for PROD_HOST
+  #     PROD_BRANCH: master # branch name for production deployments
+  #   sshKey: ""  # to pull from private repositories
+  #   # sshKey: |-
+  #   #  -----BEGIN RSA PRIVATE KEY-----
+  #   #  IIEpAIBAAKCAg1wyZD164xNLrANjRrcsbieLwHJ6fKD3LC19E...
+  #   #  ...
+  #   #  ...
+  #   #  -----END RSA PRIVATE KEY-----

@@ -27,7 +27,7 @@
     chart = "brigade/brigade" # changing the chart name means delete and recreate this release
     version = "0.20.0" # chart version
     ### Optional values below
-    valuesFile = "brigade-values.yaml" # leaving it empty uses the default chart values
+    valuesFile = "components/brigade-values.yaml" # leaving it empty uses the default chart values
     purge = true # will only be considered when there is a delete operation
     protected = false
     priority = -400
@@ -49,7 +49,7 @@
     chart = "stable/nginx-ingress" # changing the chart name means delete and recreate this release
     version = "0.29.1" # chart version
     ### Optional values below
-    valuesFile = "nginx-values.yaml" # leaving it empty uses the default chart values
+    valuesFile = "components/nginx-values.yaml" # leaving it empty uses the default chart values
     purge = true # will only be considered when there is a delete operation
     protected = false
     priority = -200
@@ -64,3 +64,4 @@
     purge = true # will only be considered when there is a delete operation
     protected = false
     priority = -100
+    helmFlags = ['--purge']
