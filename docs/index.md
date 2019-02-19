@@ -1,4 +1,4 @@
-Deploy Your Kubernetes Apps The GitOps Way
+Deploy your cloud-native apps the GitOps way
 
 ## Topics
 
