@@ -7,9 +7,9 @@ An open-source CI/CD system for containerized applications that deploys to your 
 - Creates preview deployments for the last pushed commit of a pull request
 - Deletes a preview deployment with the push of a button
 - Deletes all preview deployments of a closed pull request (optional)
-- Deploys to production for mainline merges
+- Deploys to production for Build pipeline of the mainline
 - Continuous Deployment workflow (optional)
-- Manual deployment trigger (optional)
+- [Manual deployment trigger](docs/features/manual-deployment.md) (optional)
 - Sends _Slack_ Notifications for failed and successful deployments (optional)
 
 Read the docs here: [anjakammer.github.io/anya](https://anjakammer.github.io/anya/)
