@@ -5,7 +5,7 @@ An open-source CI/CD system for containerized applications that deploys to your 
 ### Features
 - Fixed Build pipeline: Build, Test, Deploy
 - Creates preview deployments for the last pushed commit of a pull request
-- Deletes a preview deployment with the push of a button
+- [Deletes a preview deployment with the push of a button](docs/features/delete-deployment.md)
 - Deletes all preview deployments of a closed pull request (optional)
 - Deploys to production for Build pipeline of the mainline
 - Continuous Deployment workflow (optional)
