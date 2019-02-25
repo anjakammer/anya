@@ -6,5 +6,17 @@ For using this option, deactivate the 'automaticDeployment', or simply delete th
 automaticDeployment: false
 ```
 
-### Workflow with a manual deployment trigger
+### The Button
+
+When the manual deployment feature is enabled, the deployment step is registered for execution first, but will end in the state 'neutral'. The `Perform Deployment` button then appears. This state will not change the overall 'Succeeded' status of the Check Suite.
+
+> ![manual Deployment Button](../img/perform-deployment-button.png)
+
+### Workflow with a manual deployment trigger (animated)
+
+When the deployment was successful, the status of the deployment stage will change to 'Succeeded'.
+
 > ![](../img/anya-manual-deploy.gif)
+
+- See [here the description of the preview URL](preview-deployment.md), which is visible after a deployment was performed.
+- See [here the description of the `Delete Deployment` button](delete-deployment.md).

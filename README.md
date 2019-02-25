@@ -3,14 +3,14 @@
 An open-source CI/CD system for containerized applications that deploys to your _Kubernetes_ cluster.
 
 ### Features
-- Fixed Build pipeline: Build, Test, Deploy
-- Creates preview deployments for the last pushed commit of a pull request
+- [Fixed build pipeline: Build, Test, Deploy](docs/features/pipeline.md)
+- [Creates preview deployments for the last pushed commit of a pull request](docs/features/preview-deployment.md)
 - [Deletes a preview deployment with the push of a button](docs/features/delete-deployment.md)
-- Deletes all preview deployments of a closed pull request (optional)
-- Deploys to production for Build pipeline of the mainline
+- [Deletes all preview deployments of a closed pull request](docs/features/delete-deployment.md) (optional)
+- [Deploys to production for Build pipeline of the mainline](docs/features/production-deployment.md)
 - Continuous Deployment workflow (optional)
 - [Manual deployment trigger](docs/features/manual-deployment.md) (optional)
-- Sends _Slack_ Notifications for failed and successful deployments (optional)
+- [Sends _Slack_ notifications for failed and successful deployments](docs/features/slack-notifications.md) (optional)
 
 Read the docs here: [anjakammer.github.io/anya](https://anjakammer.github.io/anya/)
 

@@ -9,8 +9,36 @@ Please copy the files from the `template` directory in here and remove the `temp
   - _tls.hosts_: Same as _ingress.host_
   - _tls.secretName_: Get a TLS Certificate for your hostname and upload it into the cluster. See [this explanation on how to get TLS Encryption for your cluster](../docs/TLS_HTTPS.md). However, you could use this command:
     - `kubectl create secret tls anya-tls --key path/to/private-key.key --cert path/to/origin-certificate.pem -n anya`
-  - _projects_: This is an array of projects, as they define your applications. You find an explanation for each value in the template. In short: you specify your docker registry credentials for pushing and pulling your container images. Additionally, you define the production hostname and its TLS Certificate name. Note: the certificates need to be created in their respective namespace. So the certificate for the production environment needs to be present in the namespace 'production'.
-  The ssh key is used for a private GitHub repository and to pull the code.
+  - _projects_: This is an array of projects, as they define your applications. You find an explanation for each value in the template as comments. In short: you specify your docker registry credentials for pushing and pulling your container images. Additionally, you define the production hostname and its TLS Certificate name. Note: the certificates need to be created in their respective namespace. So the certificate for the production environment needs to be present in the namespace 'production'.
+    The ssh key is used for a private GitHub repository and to pull the code.
+
+```yaml
+- project: "GitHub-Account/my-app" # Name of the project, in the form "user/project"
+    repository: "github.com/GitHub-Account/my-app" # Domain/Org/Project
+    cloneURL: "https://github.com/GitHub-Account/my-app.git"
+    sharedSecret: "superSecret" # Create this for the GitHub App
+    github:
+      token: "1234superSecret5678" # GitHub App > OAuth credentials > Client secret
+    initGitSubmodules: "false"  # submodules should be checked out
+    secrets:
+      GH_APP_NAME: "my-anya-ci" # name of the GitHub App for anya
+      DOCKER_REGISTRY: "docker.io" # docker.io
+      DOCKER_REPO: my-organisation # organisation
+      DOCKER_USER: my-username
+      DOCKER_PASS: "superSecret"
+      SLACK_CHANNEL: "CI/CD"
+      SLACK_WEBHOOK: "https://hooks.slack.com/services/ABC/XYZ/ndfjhkfdjk"
+      PREV_HOST: "anya.example.com"  # anya.example.com for preview deployments
+      PREV_TLS: "anya-tls" # name of the TLS certificate for PREV_HOST
+      PROD_HOST: example.com # root domain of the application in production
+      PROD_PATH: "/"  # endpoint/path of your application in production
+      PROD_TLS: "prod-tls"  # name of the TLS certificate for PROD_HOST
+      PROD_BRANCH: master # branch name for production deployments
+    sshKey: ""  # to pull from private repositories
+```
+
+
+
 - `brigade-github-app-values.yaml`
   - _github.appID_: Here you need to provide the id of the GitHub App, you created.
   - _github.checkSuiteOnPR_: This is a feature of the [Brigade-GitHub App gateway](https://github.com/Azure/brigade-github-app). Leave this to `false` unless you know what you do.
