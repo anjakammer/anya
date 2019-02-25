@@ -3,13 +3,13 @@
 An open-source CI/CD system for containerized applications that deploys to your _Kubernetes_ cluster.
 
 ### Features
-- [Fixed build pipeline: Build, Test, Deploy](https://anjakammer.github.io/anya/features/pipeline.md)
-- [Creates preview deployments for the last pushed commit of a pull request](https://anjakammer.github.io/anya/features/preview-deployment.md)
-- [Deletes a preview deployment with the push of a button](https://anjakammer.github.io/anya/features/delete-deployment.md)
-- [Deletes all preview deployments of a closed pull request](https://anjakammer.github.io/anya/features/delete-deployment.md) (optional)
-- [Deploys to production for Build pipeline of the mainline](https://anjakammer.github.io/anya/features/production-deployment.md)
-- [Manual deployment trigger](https://anjakammer.github.io/anya/features/manual-deployment.md) (optional)
-- [Sends _Slack_ notifications for failed and successful deployments](https://anjakammer.github.io/anya/features/slack-notifications.md) (optional)
+- [Fixed build pipeline: Build, Test, Deploy](https://anjakammer.github.io/anya/features/pipeline)
+- [Creates preview deployments for the last pushed commit of a pull request](https://anjakammer.github.io/anya/features/preview-deployment)
+- [Deletes a preview deployment with the push of a button](https://anjakammer.github.io/anya/features/delete-deployment)
+- [Deletes all preview deployments of a closed pull request](https://anjakammer.github.io/anya/features/delete-deployment) (optional)
+- [Deploys to production for Build pipeline of the mainline](https://anjakammer.github.io/anya/features/production-deployment)
+- [Manual deployment trigger](https://anjakammer.github.io/anya/features/manual-deployment) (optional)
+- [Sends _Slack_ notifications for failed and successful deployments](https://anjakammer.github.io/anya/features/slack-notifications) (optional)
 
 Read the docs here: [anjakammer.github.io/anya](https://anjakammer.github.io/anya/)
 
