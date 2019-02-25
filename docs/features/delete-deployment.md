@@ -1,8 +1,6 @@
-### Delete Preview Deployments
+# Delete Preview Deployments
 
-There are two ways to delete a preview deployment:
-
-
+It is not possible to delete a production deployment. Please apply a new update with a new code change for the production branch instead. There are two ways to delete a preview deployment:
 
 ### 1. Manual Deployment Deletion
 

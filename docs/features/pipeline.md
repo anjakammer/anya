@@ -15,7 +15,7 @@ __Deployment Options__
 
 - `automaticDeployments`
 
-  - If set to false, [every deployment needs to get approved by the push of a button](manual-deployment).
+  - If set to false, [every deployment needs to get approved by the push of a button](manual-deployment.md).
   - If set to true, the Continuous Deployment workflow is enabled. 
 
 - `onSuccess.slackNotify`
