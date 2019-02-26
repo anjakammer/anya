@@ -5,8 +5,8 @@ An open-source CI/CD system for containerized applications that deploys to your 
 ### Features
 - [Fixed build pipeline: Build, Test, Deploy](https://anjakammer.github.io/anya/features/pipeline)
 - [Creates preview deployments for the last pushed commit of a pull request](https://anjakammer.github.io/anya/features/preview-deployment)
-- [Deletes a preview deployment with the push of a button](https://anjakammer.github.io/anya/features/delete-deployment)
-- [Deletes all preview deployments of a closed pull request](https://anjakammer.github.io/anya/features/delete-deployment) (optional)
+- [Deletes a preview deployment with the push of a button](https://anjakammer.github.io/anya/features/delete-deployment.html#1-manual-deployment-deletion)
+- [Deletes all preview deployments of a closed pull request](https://anjakammer.github.io/anya/features/delete-deployment.html#2-purge-preview-deployments-option) (optional)
 - [Deploys to production for Build pipeline of the mainline](https://anjakammer.github.io/anya/features/production-deployment)
 - [Manual deployment trigger](https://anjakammer.github.io/anya/features/manual-deployment) (optional)
 - [Sends _Slack_ notifications for failed and successful deployments](https://anjakammer.github.io/anya/features/slack-notifications) (optional)
