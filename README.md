@@ -1,6 +1,8 @@
-## anya
+# anya
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 
 An open-source CI/CD system for containerized applications that deploys to your _Kubernetes_ cluster.
+
 
 ### Features
 - [Fixed build pipeline: Build, Test, Deploy](https://anjakammer.github.io/anya/features/pipeline)
