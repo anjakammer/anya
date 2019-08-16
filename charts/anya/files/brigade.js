@@ -304,7 +304,7 @@ class Deploy extends Job {
     this.tasks = [
       'helm init --client-only > /dev/null 2>&1',
       'helm repo add anya https://storage.googleapis.com/anya-deployment/charts > /dev/null 2>&1',
-      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName},imagePullSecret=${imagePullSecret}${previewLabel}`,
+      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName},image.pullSecret=${imagePullSecret}${previewLabel}`,
       `echo "URL: <a href="https://${url}" target="_blank">${url}</a>"`
     ]
   }
