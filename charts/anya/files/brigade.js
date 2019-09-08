@@ -10,6 +10,8 @@ const cancelled = 'cancelled'
 const success = 'success'
 const neutral = 'neutral'
 const performDeploymentAction = [ { label: 'Perform Deployment', identifier: 'perform_deployment', description: 'triggers the deployment' } ]
+const targetPort = 8080
+const deploymentServiceAccount = 'anya-deployer'
 
 let prodDeploy = false
 let prNr = 0
@@ -17,6 +19,7 @@ let payload = ''
 let webhook = ''
 let secrets = ''
 let projectID = ''
+let imagePullSecret = ''
 
 events.on('check_suite:requested', checkRequested)
 events.on('check_suite:rerequested', checkRequested)
@@ -29,6 +32,7 @@ async function checkRequested (e, p) {
   webhook = JSON.parse(payload)
   secrets = p.secrets
   projectID = p.id
+  imagePullSecret = projectID.replace('brigade-', 'regcred-')
 
   const pr = webhook.body.check_suite.pull_requests
   prodDeploy = webhook.body.check_suite.head_branch === secrets.PROD_BRANCH
@@ -46,22 +50,22 @@ async function checkRequested (e, p) {
 async function runCheckSuite (config) {
   registerCheckSuite()
   const appName = webhook.body.repository.name
-  const imageTag = (webhook.body.check_suite.head_sha).slice(0, 7)
-  const imageName = `${secrets.DOCKER_REPO}/${appName}:${imageTag}`
+  const tag = (webhook.body.check_suite.head_sha).slice(0, 7)
+  const imageName = `${secrets.DOCKER_REPO}/${appName}`
 
-  runBuildStage(imageName)
-    .then(() => runTestStage(imageName, config.testStageTasks))
+  runBuildStage(imageName, tag)
+    .then(() => runTestStage(appName, tag, config.testStageTasks))
     .then(() => {
       if (config.automaticDeployment) {
-        return runDeployStage(config, appName, imageName, imageTag)
+        return runDeployStage(config, appName, imageName, tag)
       }
       manualDeployment()
     }).catch((err) => { console.log(err.toString()) })
 }
 
-async function runBuildStage (imageName) {
+async function runBuildStage (imageName, tag) {
   const startedAt = new Date().toISOString()
-  return new Build(imageName).run()
+  return new Build(imageName, tag).run()
     .then((result) =>
       new SendSignal({ stage: buildStage, logs: result.toString(), conclusion: success, startedAt }).run())
     .catch((err) => {
@@ -74,9 +78,11 @@ async function runBuildStage (imageName) {
     })
 }
 
-async function runTestStage (imageName, testStageTasks) {
+async function runTestStage (appName, tag, testStageTasks) {
   const startedAt = new Date().toISOString()
-  return new Test(testStageTasks, imageName).run()
+  const imageID = `${secrets.DOCKER_REPO}/${appName}:${tag}`
+  //new IntegrationTest(appName, tag).run()
+  return new Test(testStageTasks, imageID).run()
     .then((result) =>
       new SendSignal({ stage: testStage, logs: result.toString(), conclusion: success, startedAt }).run())
     .catch((err) => {
@@ -88,17 +94,13 @@ async function runTestStage (imageName, testStageTasks) {
     })
 }
 
-async function runDeployStage (config, appName, imageName, imageTag) {
-  const targetPort = await getApplicationPort()
-  if (typeof targetPort === 'undefined' || targetPort === '') {
-    return console.log('No port definition found in Dockerfile. Check if you Dockerfile is present in the root directory.')
-  }
+async function runDeployStage (config, appName, imageName, tag) {
   const host = prodDeploy ? secrets.PROD_HOST : secrets.PREV_HOST
-  const path = prodDeploy ? secrets.PROD_PATH : `/preview/${appName}/${imageTag}`
+  const path = prodDeploy ? secrets.PROD_PATH : `/preview/${appName}/${tag}`
   const url = `${host}${path}`
   const startedAt = new Date().toISOString()
 
-  return new Deploy(appName, imageName, imageTag, targetPort, host, path, url).run()
+  return new Deploy(appName, tag, host, path, url).run()
     .then((result) => {
       const actions = prodDeploy ? [] : [ { label: 'Delete Deployment', identifier: 'delete_deployment', description: 'delete the deployment for this commit' } ]
       new SendSignal({ stage: deployStage, logs: result.toString(), conclusion: success, actions, startedAt }).run()
@@ -141,20 +143,6 @@ async function parseConfig () {
     .catch(err => { throw err }) // to skip the next pipeline stages
 }
 
-async function getApplicationPort () {
-  const dockerfileParser = new Job('parse-dockerfile', 'anjakammer/dockerfile-parser:latest')
-  dockerfileParser.env.DOCKERFILE_PATH = '/src/Dockerfile'
-  dockerfileParser.env.KEY = 'EXPOSE'
-  dockerfileParser.imageForcePull = true
-  return dockerfileParser.run()
-    .then((result) => {
-      let dockerfile = result.toString()
-      dockerfile = JSON.parse(dockerfile.substring(dockerfile.indexOf('{') - 1, dockerfile.lastIndexOf('}') + 1))
-      return dockerfile.port
-    })
-    .catch(err => { console.log(err); return '' })
-}
-
 function rerequestCheckSuite () {
   console.log('No PR-id found. Will re-request the check_suite.')
   const rerequest = new Job('rerequest-check-suite', 'anjakammer/post2_github-checks:latest')
@@ -174,6 +162,7 @@ function registerCheckSuite () {
   return Group.runEach([
     new RegisterCheck(buildStage),
     new RegisterCheck(testStage),
+    new RegisterCheck('integration-test'), // TODO make it beautiful
     new RegisterCheck(deployStage)
   ]).catch(err => { console.log(err.toString()) })
 }
@@ -265,7 +254,7 @@ class RegisterCheck extends Job {
 }
 
 class Build extends Job {
-  constructor (imageName) {
+  constructor (imageName, tag) {
     super(buildStage.toLowerCase(), 'docker:stable-dind')
     this.privileged = true
     this.env.DOCKER_DRIVER = 'overlay'
@@ -274,37 +263,75 @@ class Build extends Job {
       'sleep 20',
       'cd /src',
       `echo ${secrets.DOCKER_PASS} | docker login -u ${secrets.DOCKER_USER} --password-stdin ${secrets.DOCKER_REGISTRY} > /dev/null 2>&1`,
-      `docker build -t ${imageName} .`,
-      `docker push ${imageName}`
+      `docker build -t ${imageName}:${tag} .`,
+      `docker push ${imageName}:${tag}`
     ]
   }
 }
 
 class Test extends Job {
-  constructor (testStageTasks, imageName) {
-    super(testStage.toLowerCase(), imageName)
+  constructor (testStageTasks, imageID) {
+    super(testStage.toLowerCase(), imageID)
     this.imageForcePull = true
     this.useSource = false
-    this.imagePullSecrets = [projectID.replace('brigade-', 'regcred-')]
+    this.imagePullSecrets = imagePullSecret
     this.tasks = testStageTasks
   }
 }
 
-class Deploy extends Job {
-  constructor (appName, imageName, imageTag, targetPort, host, path, url) {
-    const tlsName = prodDeploy ? secrets.PROD_TLS : secrets.PREV_TLS
-    const deploymentName = prodDeploy ? `${appName}` : `${appName}-${imageTag}-preview`
-    const namespace = prodDeploy ? 'production' : 'preview'
-    const previewLabel = prodDeploy || prNr === 0 ? '' : `,previewLabel=${appName}-${prNr}`
-    const imagePullSecret = projectID.replace('brigade-', 'regcred-')
-    super(deployStage.toLowerCase(), kubectlHelmImage)
+class IntegrationTest extends Job {
+  constructor (appName, tag) {
+    super('integration-test', kubectlHelmImage)
+    this.imageForcePull = true
     this.useSource = false
-    this.privileged = true
-    this.serviceAccount = 'anya-deployer'
+    this.serviceAccount = deploymentServiceAccount
+    const deployParameter = {
+      deploymentName: `${appName}-${tag}-int`,
+      appName,
+      tag,
+      host: '',
+      path: '',
+      tlsName: '',
+      namespace: 'default',
+      ingressEnabled: false,
+      imagePullSecret,
+      previewLabel: ''
+    }
+    const installCmd = installationCommand(deployParameter)
     this.tasks = [
       'helm init --wait --client-only > /dev/null 2>&1',
       'helm repo add anya https://storage.googleapis.com/anya-deployment/charts > /dev/null 2>&1',
-      `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${imageTag},ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName},service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName},image.pullSecret=${imagePullSecret}${previewLabel}`,
+      `${installCmd}`,
+      `kubectl get deployment,service,pod -n default`
+    ]
+  }
+}
+
+function installationCommand (deploymentName, appName, tag, host, path, tlsName, namespace, ingressEnabled, imagePullSecret, previewLabel) {
+  const ingressConfig = ingressEnabled ? `,ingress.path=${path},ingress.host=${host},ingress.tlsSecretName=${tlsName}` : ',ingress.enabled=false'
+  const imageConfig = `,image.repository=${secrets.DOCKER_REGISTRY}/${secrets.DOCKER_REPO}/${appName},image.tag=${tag}`
+  const previewLabelConfig = previewLabel ? `,previewLabel=${previewLabel}` : ''
+  const baseConfig = `service.targetPort=${targetPort},nameOverride=${appName},fullnameOverride=${deploymentName},image.pullSecret=${imagePullSecret}`
+  return `helm upgrade --install ${deploymentName} anya/deployment-template --namespace ${namespace} --set-string ${baseConfig}${imageConfig}${ingressConfig}${previewLabelConfig}`
+}
+
+class Deploy extends Job {
+  constructor (appName, tag, host, path, url) {
+    const tlsName = prodDeploy ? secrets.PROD_TLS : secrets.PREV_TLS
+    const deploymentName = prodDeploy ? `${appName}` : `${appName}-${tag}-preview`
+    const namespace = prodDeploy ? 'production' : 'preview'
+    const previewLabel = prodDeploy || prNr === 0 ? '' : `${appName}-${prNr}`
+    const installCmd = installationCommand(
+      deploymentName, appName, tag, host, path, tlsName, namespace, true, imagePullSecret, previewLabel
+    )
+    super(deployStage.toLowerCase(), kubectlHelmImage)
+    this.useSource = false
+    this.privileged = true
+    this.serviceAccount = deploymentServiceAccount
+    this.tasks = [
+      'helm init --wait --client-only > /dev/null 2>&1',
+      'helm repo add anya https://storage.googleapis.com/anya-deployment/charts > /dev/null 2>&1',
+      `${installCmd}`,
       `echo "URL: <a href="https://${url}" target="_blank">${url}</a>"`
     ]
   }
