@@ -16,7 +16,7 @@ helmsman-apply :
 	helmsman -f helmsman-config/setup.toml --apply
 
 purge-worker :
-	kubectl delete pod -n anya -l 'component in (job, build)'
+	kubectl delete pod,secret -n anya -l 'component in (job, build)'
 
 purge-preview :
 	kubectl delete deployment,services,ingress -n preview --all
