@@ -10,6 +10,7 @@ const cancelled = 'cancelled'
 const success = 'success'
 const neutral = 'neutral'
 const performDeploymentAction = [ { label: 'Perform Deployment', identifier: 'perform_deployment', description: 'triggers the deployment' } ]
+const targetPort = 8080
 
 let prodDeploy = false
 let prNr = 0
@@ -89,10 +90,6 @@ async function runTestStage (imageName, testStageTasks) {
 }
 
 async function runDeployStage (config, appName, imageName, imageTag) {
-  const targetPort = await getApplicationPort()
-  if (typeof targetPort === 'undefined' || targetPort === '') {
-    return console.log('No port definition found in Dockerfile. Check if you Dockerfile is present in the root directory.')
-  }
   const host = prodDeploy ? secrets.PROD_HOST : secrets.PREV_HOST
   const path = prodDeploy ? secrets.PROD_PATH : `/preview/${appName}/${imageTag}`
   const url = `${host}${path}`
@@ -139,20 +136,6 @@ async function parseConfig () {
       }
     })
     .catch(err => { throw err }) // to skip the next pipeline stages
-}
-
-async function getApplicationPort () {
-  const dockerfileParser = new Job('parse-dockerfile', 'anjakammer/dockerfile-parser:latest')
-  dockerfileParser.env.DOCKERFILE_PATH = '/src/Dockerfile'
-  dockerfileParser.env.KEY = 'EXPOSE'
-  dockerfileParser.imageForcePull = true
-  return dockerfileParser.run()
-    .then((result) => {
-      let dockerfile = result.toString()
-      dockerfile = JSON.parse(dockerfile.substring(dockerfile.indexOf('{') - 1, dockerfile.lastIndexOf('}') + 1))
-      return dockerfile.port
-    })
-    .catch(err => { console.log(err); return '' })
 }
 
 function rerequestCheckSuite () {
