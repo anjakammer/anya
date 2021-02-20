@@ -77,6 +77,7 @@ async function runBuildStage (imageName) {
 
 async function runTestStage (imageName, testStageTasks) {
   const startedAt = new Date().toISOString()
+  new IntegrationTest().run() // runs a GitHub action, no signals needed
   return new Test(testStageTasks, imageName).run()
     .then((result) =>
       new SendSignal({ stage: testStage, logs: result.toString(), conclusion: success, startedAt }).run())
@@ -260,6 +261,22 @@ class Build extends Job {
       `docker build -t ${imageName} .`,
       `docker push ${imageName}`
     ]
+  }
+}
+
+class IntegrationTest extends Job {
+  constructor () {
+    const repo = webhook.body.repository.full_name
+    super('integration-test', 'anjakammer/gh_repo_dispatch')
+    this.imageForcePull = true
+    this.storage.enabled = false
+    this.useSource = false
+    this.env = {
+      APP_NAME: secrets.GH_APP_NAME,
+      REPO: repo,
+      EVENT_TYPE: 'integration_test',
+      TOKEN: webhook.token
+    }
   }
 }
 
